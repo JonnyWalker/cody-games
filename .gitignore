@@ -1,0 +1,10 @@
+# OS Files
+.DS_Store
+Desktop.ini
+
+# Build Artifacts
+*.bin
+*.o
+
+# IDE Files
+.vscode/
