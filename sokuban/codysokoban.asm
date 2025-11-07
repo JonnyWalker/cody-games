@@ -7,13 +7,13 @@
 ;
 ; To assemble using 64TASS run the following:
 ;
-;   64tass --mw65c02 --nostart -o codysokuban.bin codysokuban.asm
+;   64tass --mw65c02 --nostart -o codysokoban.bin codysokoban.asm
 ; To run in the emulator:
 ;
 
 .include "codyconstants.asm"
 
-MAP_WIDTH = #40
+MAP_WIDTH = #40                 ; never bigger than 255
 PLAYERX   = $D0                 ; Player coordinates
 PLAYERY   = $D1
 NEXT_X    = $D2                 ; Pos the Player wants to move to
@@ -27,8 +27,8 @@ BUFFLAG   = $DA                 ; Flag indicating what buffer is being used
 FWDREV    = $DB                 ; Flag indicating player direction (forward or reverse)
 
 TEMP      = $DC                 ; Temporary variable
-ARG       = $DD                 ; used to pass arguments
-RET_VAL   = $E1
+RET_VAL   = $DD                 ; 2 bytes
+ARG       = $DF                 ; used to pass arguments 
 
 
 ; Program header for Cody Basic's loader (needs to be first)
@@ -161,35 +161,21 @@ _UP         LDA #1              ; TODO use variabel UPDOWN, use FWDREV for now
             BRA _NEXT
 
 _NEXT
-
-            LDA #<MAPDATA        ; Start tile index at beginning of map
+            LDA NEXT_X          ; Pass arguments
+            STA ARG+0
+            LDA NEXT_Y
+            STA ARG+1
+            LDA #<MAPDATA       ; Start map pointer at beginning of map
             STA ARG+2
             LDA #>MAPDATA
             STA ARG+3
+            LDA MAP_WIDTH
+            STA ARG+4
+            LDA #0              ; last tile value with no collsion
+            STA ARG+5
+            JSR COMPUTE_COLISSION
 
-            LDA NEXT_X          ; Pass arguments
-            ADC #0
-            STA ARG+0
-            LDA NEXT_Y
-            ADC #0
-            STA ARG+1
-
-            JSR COMPUTE_TILE
-
-            LDA (RET_VAL)       ; Read current tile in Tile Map
-            CMP #1
-            BEQ _COLISSION
-
-            LDA NEXT_X          ; Pass arguments
-            ADC #0
-            STA ARG+0
-            LDA NEXT_Y
-            ADC #12
-            STA ARG+1
-
-            JSR COMPUTE_TILE
-
-            LDA (RET_VAL)       ; Read current tile in Tile Map
+            LDA RET_VAL         ; Read current tile in Tile Map
             CMP #1
             BEQ _COLISSION
 
@@ -197,27 +183,59 @@ _NEXT
             ADC #12
             STA ARG+0
             LDA NEXT_Y
-            ADC #0
             STA ARG+1
+            LDA #<MAPDATA       ; Start map pointer at beginning of map
+            STA ARG+2
+            LDA #>MAPDATA
+            STA ARG+3
+            LDA MAP_WIDTH
+            STA ARG+4
+            LDA #0              ; last tile value with no collsion
+            STA ARG+5
+            JSR COMPUTE_COLISSION
 
-            JSR COMPUTE_TILE
-
-            LDA (RET_VAL)       ; Read current tile in Tile Map
+            LDA RET_VAL         ; Read current tile in Tile Map
             CMP #1
-            BEQ _COLISSION
+            BEQ _COLISSION    
+
+            LDA NEXT_X          ; Pass arguments
+            STA ARG+0
+            LDA NEXT_Y
+            ADC #21
+            STA ARG+1
+            LDA #<MAPDATA       ; Start map pointer at beginning of map
+            STA ARG+2
+            LDA #>MAPDATA
+            STA ARG+3
+            LDA MAP_WIDTH
+            STA ARG+4
+            LDA #0              ; last tile value with no collsion
+            STA ARG+5
+            JSR COMPUTE_COLISSION
+
+            LDA RET_VAL         ; Read current tile in Tile Map
+            CMP #1
+            BEQ _COLISSION    
 
             LDA NEXT_X          ; Pass arguments
             ADC #12
             STA ARG+0
             LDA NEXT_Y
-            ADC #12
+            ADC #21
             STA ARG+1
+            LDA #<MAPDATA       ; Start map pointer at beginning of map
+            STA ARG+2
+            LDA #>MAPDATA
+            STA ARG+3
+            LDA MAP_WIDTH
+            STA ARG+4
+            LDA #0              ; last tile value with no collsion
+            STA ARG+5
+            JSR COMPUTE_COLISSION
 
-            JSR COMPUTE_TILE
-
-            LDA (RET_VAL)       ; Read current tile in Tile Map
+            LDA RET_VAL         ; Read current tile in Tile Map
             CMP #1
-            BEQ _COLISSION
+            BEQ _COLISSION    
 
             BRA _CONTINUE
 _COLISSION
@@ -388,7 +406,7 @@ _WAITBLANK  LDA VID_BLNK        ; Wait until the blanking is one (not drawing th
 
 ; The game map.
 ;
-; 0 = Sky
+; 0 = nothing
 ; 1 = Brick
 ; 2 = ?
 ; 3 = ?
