@@ -82,6 +82,10 @@ _COMPUTE_ROW_END
 ; RET_VAL = 1  colission
 COMPUTE_COLISSION       
   JSR COMPUTE_TILE
+  ; TODO: write loop and check 12 or maybe 16 points
+  ; for all tiles that the player character could be on
+  ; e.g. ret_val0, ret_val0+1, ret_val0+2...
+  ; .... ret_val1, ret_val1+1...
   
   LDA RET_VAL+0       ; pass tile index x 
   STA ARG+0
