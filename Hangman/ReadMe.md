@@ -20,5 +20,4 @@ E.g. 100 msec per line
 ![hangman.png](hangman.png)
 
 # TODO:
-- BUG: The wrong letter is shown an iteration to late
-- BUG: The string conc of wrong letters is hacky 
+- The string conc of wrong letters is hacky 
