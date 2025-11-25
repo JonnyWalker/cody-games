@@ -12,14 +12,13 @@ Use a program like RealTerm and add delays so the cody basic parser can catch up
 E.g. 100 msec per line
 
 # How to Play
-- Movement: WASD
+- Movement: WASD / Joystick UP/LEFT/RIGHT/DOWN
+- FIRE: E / Fire Button
 - Quit: Q
 
 # Screenshot
 ![codyraid.png](codyraid.png)
 
 # TODO:
-- Joystick
-- Fire 
 - Hit detection
 - Sprite movement
