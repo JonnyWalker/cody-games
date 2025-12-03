@@ -235,7 +235,13 @@ def main():
     else:
         batch_size = 1 if is_character else 3
         for data in _batched(image_bytes, batch_size):
-            print(".BYTE", ", ".join(f"%{b:08b}" for b in data))
+            print(
+                ".BYTE",
+                ", ".join(
+                    "%" + "_".join("".join(x) for x in _batched(f"{b:08b}", 2))
+                    for b in data
+                ),
+            )
 
 
 if __name__ == "__main__":
