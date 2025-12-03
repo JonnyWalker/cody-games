@@ -221,7 +221,7 @@ def main():
         for c in _batched(rgb_list, 4)
     )
     # Pad image data to multiples of 8
-    image_bytes += (0,) * (8 - (len(image_bytes) % 8))
+    image_bytes += (0,) * (8 - ((len(image_bytes) % 8) or 8))
 
     if language == "basic":
         line_number = 0 if line_number_arg is None else line_number_arg
