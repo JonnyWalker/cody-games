@@ -3,8 +3,7 @@ Convert an image to bytes for the Cody computer.
 
 Since the Cody computer uses a dynamic color palette, the precise colors of \
 the image are not yet defined.
-The colors in the image file are interpreted by the arguments \
---color-background-1/2 and --color-unique-1/2.
+The colors in the image file are interpreted by the arguments --color-0/1/2/3.
 The image size must be 12x21 for sprites and 4x8 for characters.
 You can either generate Cody BASIC code or Tass assembly.
 
@@ -85,45 +84,52 @@ def main():
     parser.add_argument(
         "--color-0",
         type=_hex_to_rgb,
-        default=(255, 255, 255),  # Black
         metavar="COLOR",
         help=(
             "Color in hex format that is used in the file to represent "
             "color 0. "
-            "Default is #FFFFFF."
+            "For characters, this is the first unique color. "
+            "For sprites, this is the transparent color. "
+            "Default is #FF0000 (red) for characters and "
+            "#FFFFFF (white) for sprites."
         ),
     )
     parser.add_argument(
         "--color-1",
         type=_hex_to_rgb,
-        default=(0, 0, 0),  # White
         metavar="COLOR",
         help=(
             "Color in hex format that is used in the file to represent "
             "color 1. "
-            "Default is #000000."
+            "For characters, this is the second unique color. "
+            "For sprites, this is the first unique color. "
+            "Default is #0000FF (blue) for characters and "
+            "#FF0000 (red) for sprites."
         ),
     )
     parser.add_argument(
         "--color-2",
         type=_hex_to_rgb,
-        default=(255, 0, 0),  # Red
         metavar="COLOR",
         help=(
             "Color in hex format that is used in the file to represent "
             "color 2. "
-            "Default is #FF0000."
+            "For characters, this is the first shared color. "
+            "For sprites, this is the second unique color. "
+            "Default is #FFFFFF (white) for characters and "
+            "#0000FF (blue) for sprites."
         ),
     )
     parser.add_argument(
         "--color-3",
         type=_hex_to_rgb,
-        default=(0, 0, 255),  # Blue
         metavar="COLOR",
         help=(
             "Color in hex format that is used in the file to represent "
             "color 0. "
-            "Default is #0000FF."
+            "For characters, this is the second shared color. "
+            "For sprites, this is the shared color. "
+            "Default is #000000 (black) for characters and sprites."
         ),
     )
     parser.add_argument(
@@ -146,16 +152,25 @@ def main():
     is_sprite: bool = args.sprite
     is_character: bool = args.character
     language: Literal["tass", "basic"] = args.language
-    col0: tuple[int, int, int] = args.color_0
-    col1: tuple[int, int, int] = args.color_1
-    col2: tuple[int, int, int] = args.color_2
-    col3: tuple[int, int, int] = args.color_3
+    col0: tuple[int, int, int] | None = args.color_0
+    col1: tuple[int, int, int] | None = args.color_1
+    col2: tuple[int, int, int] | None = args.color_2
+    col3: tuple[int, int, int] | None = args.color_3
     line_number_arg: int | None = args.line_number
     line_increment: int = args.line_increment
 
     if is_sprite == is_character:
         print("ERROR: Either -s or -c must be set!", file=sys.stderr)
         raise SystemExit(1)
+
+    if col0 is None:
+        col0 = (255, 0, 0) if is_character else (255, 255, 255)
+    if col1 is None:
+        col1 = (0, 0, 255) if is_character else (255, 0, 0)
+    if col2 is None:
+        col2 = (255, 255, 255) if is_character else (0, 0, 255)
+    if col3 is None:
+        col3 = (0, 0, 0)
 
     color_set = {col0, col1, col2, col3}
     if len(color_set) != 4:
@@ -185,10 +200,10 @@ def main():
 
     rgb_list = list(img.getdata())
     color_map = {
-        col0: 0b00,  # Background 1 / Transparent
-        col1: 0b01,  # Background 2 / Unique Sprite 1
-        col2: 0b10,  # Unique 1 / Unique Sprite 2
-        col3: 0b11,  # Unique 2 / Shared Sprite
+        col0: 0b00,  # Unique Char 1 / Transparent
+        col1: 0b01,  # Unique Char 2 / Unique Sprite 1
+        col2: 0b10,  # Shared Char 1 / Unique Sprite 2
+        col3: 0b11,  # Shared Char 2 / Shared Sprite
     }
     invalid_colors = set(rgb_list) - set(color_map)
     if invalid_colors:
@@ -206,7 +221,7 @@ def main():
         for c in _batched(rgb_list, 4)
     )
     # Pad image data to multiples of 8
-    image_bytes += (0,) * (8 - (len(image_bytes) % 8))
+    image_bytes += (0,) * (8 - ((len(image_bytes) % 8) or 8))
 
     if language == "basic":
         line_number = 0 if line_number_arg is None else line_number_arg
@@ -220,7 +235,13 @@ def main():
     else:
         batch_size = 1 if is_character else 3
         for data in _batched(image_bytes, batch_size):
-            print(".BYTE", ", ".join(f"%{b:08b}" for b in data))
+            print(
+                ".BYTE",
+                ", ".join(
+                    "%" + "_".join("".join(x) for x in _batched(f"{b:08b}", 2))
+                    for b in data
+                ),
+            )
 
 
 if __name__ == "__main__":
