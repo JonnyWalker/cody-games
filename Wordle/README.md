@@ -1,4 +1,4 @@
-# Cody Game
+# Cody BASIC Game
 
 A Wordle clone written in Cody BASIC.
 A Game for the [Cody Computer](https://www.codycomputer.org/).
@@ -15,9 +15,7 @@ Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
 
 # Run (Real Hardware)
 
-Run using the cody computer and the prop plug :
-Use a program like RealTerm and add delays so the cody basic parser can catch up.
-E.g. 100 msec per line
+Run the program on the Cody computer using the Prop Plug. Use a terminal application such as RealTerm and insert delays so the Cody BASIC parser can keep up — for example, about 100 ms per line.
 
 `LOAD 1,0` followed by `RUN` 
 
