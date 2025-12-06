@@ -23,5 +23,9 @@ Run the program on the Cody computer using the Prop Plug. Use a terminal applica
 # Screenshot
 ![hangman.png](hangman.png)
 
+# Author
+
+John Witulski
+
 # TODO:
 - The string conc of wrong letters is hacky 
