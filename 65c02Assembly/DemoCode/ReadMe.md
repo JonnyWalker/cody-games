@@ -17,3 +17,7 @@
 # 03 Tile Data
 - Example: changes 20 tiles in the first row (03_tiledata.asm)
 - Task: draw 20 tiles of type one in the middel row of the screen by starting at tile 490 (03_solution.asm)
+
+# 04 Text 
+- Example: prints the text "HELLO" (04_hello.asm)
+- Task: print the tect "HELLO CODY" (04_solution.asm)
