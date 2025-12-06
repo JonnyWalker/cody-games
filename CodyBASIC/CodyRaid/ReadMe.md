@@ -1,15 +1,19 @@
-# Cody Game
+# Cody BASIC Game
 
 CodyRaid:
 A Game for the [Cody Computer](https://www.codycomputer.org/).
 
-# Run
+# Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
-`cargo run --release -- --fix-newlines --uart1-source codyraid.bas codybasic.bin`
+`cargo run --release -- --fix-newlines codybasic.bin --uart1-source codyraid.bas --fast`
 
-Run using the cody computer and the prop plug :
-Use a program like RealTerm and add delays so the cody basic parser can catch up.
-E.g. 100 msec per line
+`LOAD 1,0` followed by `RUN` 
+
+# Run (Real Hardware)
+
+Run the program on the Cody computer using the Prop Plug. Use a terminal application such as RealTerm and insert delays so the Cody BASIC parser can keep up — for example, about 100 ms per line.
+
+`LOAD 1,0` followed by `RUN` 
 
 # How to Play
 - Movement: WASD / Joystick UP/LEFT/RIGHT/DOWN
