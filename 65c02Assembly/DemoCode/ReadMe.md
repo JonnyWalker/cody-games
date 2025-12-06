@@ -9,3 +9,7 @@
 # 01 Border Color
 - Example: Sets border color to red (01_bordercolor.asm)
 - Task: change the color to blue (01_solution.asm)
+
+# 02 Tile Color
+- Example: Change 40 tile colors to cyan (02_tilecolor.asm)
+- Task: draw 20 purple and 20 green tile below the cyan tiles (02_solution.asm)
