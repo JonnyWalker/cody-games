@@ -21,3 +21,6 @@
 # 04 Text 
 - Example: prints the text "HELLO" (04_hello.asm)
 - Task: print the tect "HELLO CODY" (04_solution.asm)
+
+# 05 Key Input
+- Example: prints the text "HELLO" after the P Key has been pressed (05_pressP.asm)
