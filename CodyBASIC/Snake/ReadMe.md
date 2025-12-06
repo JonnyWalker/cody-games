@@ -1,18 +1,17 @@
-# CodyRaid
+# Snake
 
-A Cody BASIC Game for the [Cody Computer](https://www.codycomputer.org/).
+The good old snake game implemented in Cody BASIC.
+A Cody BASIC for the [Cody Computer](https://www.codycomputer.org/).
 
 # How to Play
-- Movement: WASD / Joystick UP/LEFT/RIGHT/DOWN
-- FIRE: E / Fire Button
-- Quit: Q
+To control the snake use W A S D keys.
 
 # Screenshot
-![codyraid.png](codyraid.png)
+![snake.png](snake.png)
 
 # Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
-`cargo run --release -- --fix-newlines codybasic.bin --uart1-source codyraid.bas --fast`
+`cargo run --release -- --fix-newlines codybasic.bin --uart1-source snake.bas`
 
 `LOAD 1,0` followed by `RUN` 
 
@@ -21,8 +20,4 @@ Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
 Run the program on the Cody computer using the Prop Plug. Use a terminal application such as RealTerm and insert delays so the Cody BASIC parser can keep up — for example, about 100 ms per line.
 
 `LOAD 1,0` followed by `RUN` 
-
-# TODO:
-- Hit detection
-- Sprite movement
 

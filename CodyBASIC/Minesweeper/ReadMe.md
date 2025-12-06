@@ -1,18 +1,23 @@
-# CodyRaid
+# Minesweeper
 
 A Cody BASIC Game for the [Cody Computer](https://www.codycomputer.org/).
 
+
 # How to Play
-- Movement: WASD / Joystick UP/LEFT/RIGHT/DOWN
-- FIRE: E / Fire Button
-- Quit: Q
+Controls:
+
+- Move selection with WASD
+- Place/remove flag with SPACE
+- Reveal with ARROW
+
+The game ends when you lose.
 
 # Screenshot
-![codyraid.png](codyraid.png)
+![minesweeper.png](minesweeper.png)
 
 # Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
-`cargo run --release -- --fix-newlines codybasic.bin --uart1-source codyraid.bas --fast`
+`cargo run --release -- --fix-newlines codybasic.bin --uart1-source minesweeper.bas`
 
 `LOAD 1,0` followed by `RUN` 
 
@@ -22,7 +27,7 @@ Run the program on the Cody computer using the Prop Plug. Use a terminal applica
 
 `LOAD 1,0` followed by `RUN` 
 
-# TODO:
-- Hit detection
-- Sprite movement
+# TODO
+Improved graphics
 
+Safe space at the beginning
