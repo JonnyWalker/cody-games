@@ -15,6 +15,10 @@ The game ends when you lose.
 # Screenshot
 ![minesweeper.png](minesweeper.png)
 
+# Author
+
+https://github.com/einetuer/
+
 # Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
 `cargo run --release -- --fix-newlines codybasic.bin --uart1-source minesweeper.bas`

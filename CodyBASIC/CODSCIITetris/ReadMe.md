@@ -6,6 +6,22 @@ Inspired by the original Tetris running on a russian homecomeputer.
 
 A Cody Basic Game for the [Cody Computer](https://www.codycomputer.org/).
 
+# How to Play
+Controls:
+- W / Joystick Up : Fast Drop
+- A / Joystick Left : Move Left
+- D / Joystick Right : Move Right
+- J / Fire : Rotate Clockwise
+- K : Rotate Counterclockwise
+- Space : Reset
+
+# Screenshot
+![CODSCIITetris.png](CODSCIITetris.png)
+
+# Author
+
+Lukas Lang
+
 # Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
 `cargo run --release -- --fix-newlines codybasic.bin --uart1-source codsciitetris.bas --fast`
@@ -18,14 +34,3 @@ Run the program on the Cody computer using the Prop Plug. Use a terminal applica
 
 `LOAD 1,0` followed by `RUN` 
 
-# How to Play
-Controls:
-- W / Joystick Up : Fast Drop
-- A / Joystick Left : Move Left
-- D / Joystick Right : Move Right
-- J / Fire : Rotate Clockwise
-- K : Rotate Counterclockwise
-- Space : Reset
-
-# Screenshot
-![CODSCIITetris.png](CODSCIITetris.png)
