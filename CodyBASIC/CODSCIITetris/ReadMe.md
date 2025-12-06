@@ -1,8 +1,10 @@
-# Cody BASIC Game
+# CODSCII Tetris
 
-CODSCII Tetris:
-Inspired by the original Tetris running on a russian homecomeputer. ![ogtetris.png](ogtetris.png)
-A Game for the [Cody Computer](https://www.codycomputer.org/).
+Inspired by the original Tetris running on a russian homecomeputer. 
+
+![ogtetris.png](ogtetris.png)
+
+A Cody Basic Game for the [Cody Computer](https://www.codycomputer.org/).
 
 # Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):

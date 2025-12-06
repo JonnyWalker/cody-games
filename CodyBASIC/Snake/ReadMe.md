@@ -1,7 +1,6 @@
 # Snake
 
-The good old snake game implemented in Cody BASIC.
-A Cody BASIC for the [Cody Computer](https://www.codycomputer.org/).
+The good old snake game implemented in Cody BASIC for the [Cody Computer](https://www.codycomputer.org/).
 
 # How to Play
 To control the snake use W A S D keys.
