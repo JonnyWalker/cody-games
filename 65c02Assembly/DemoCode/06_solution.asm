@@ -1,4 +1,5 @@
 ; draws a level by changing tile colors
+; prints a text on a gray status bar at the bottom
 
 .include "codyconstants.asm"
 
@@ -33,12 +34,12 @@ MAIN                            ; The program starts running from here
 _XLOOP  
             LDY #0              
 _COPYCOLOR  LDA #$05            ; forground color (0=black) backgrund color (5=green)
-            STA (COLORPTR),Y         ; Copy colors to color memory 
+            STA (COLORPTR),Y    ; Copy colors to color memory 
             INY
             CPY #10
             BNE _COPYCOLOR
 _COPYCOLOR2 LDA #$0E            ; forground color (0=black) backgrund color (E=light blue)
-            STA (COLORPTR),Y         ; Copy colors to color memory 
+            STA (COLORPTR),Y    ; Copy colors to color memory 
             INY
             CPY #30
             BNE _COPYCOLOR2

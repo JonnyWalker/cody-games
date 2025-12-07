@@ -41,7 +41,22 @@ Review the Assembly example code along with the comments in each file, then comp
 ![solution05.png](solution05.png)
 
 # 06 Draw Level
+
+Hint: use the Python scripts in https://github.com/JonnyWalker/cody-games/tree/main/Tools/CodyBASIC to convert images to tile data or sprite data.
+
+E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
+
 - Example: draws a level (river and land) by changing tile colors (06_level.asm)
 - Exercise: add a gray status bar at the bottom (last five rows) and write the text "Codyvision" (06_solution.asm)
 
 ![solution06.png](solution06.png)
+
+# 07 Draw Sprite
+
+Hint: use the Python scripts in https://github.com/JonnyWalker/cody-games/tree/main/Tools/CodyBASIC to convert images to tile data or sprite data.
+
+E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
+- Example: draws a jet sprite (07_sprite.asm)
+- Exercise: draw the sprite in the middle of the screen
+
+![solution07.png](solution07.png)
