@@ -60,3 +60,9 @@ E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
 - Exercise: draw the sprite in the middle of the screen
 
 ![solution07.png](solution07.png)
+
+# 08 Move Sprite
+- Example: moves a jet sprite using the joystick up/down/left/right, (arrow keys in emulation) (08_move_sprite.asm)
+- Exercise: use WASD keys to move the sprite (08_solution.asm)
+
+Hint: use `CMP`
