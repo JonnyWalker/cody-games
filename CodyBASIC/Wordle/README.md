@@ -14,6 +14,10 @@ Press the Cody button to start the game. This stops an internal timer, which is 
 # Screenshot
 ![wordle.png](wordle.png)
 
+# Author
+
+Timo Mauerer
+
 # Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
 `cargo run --release -- --fix-newlines codybasic.bin --uart1-source wordle.bas`
