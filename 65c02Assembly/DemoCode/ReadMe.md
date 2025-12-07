@@ -39,3 +39,9 @@ Review the Assembly example code along with the comments in each file, then comp
 - Exercise: Change the bg color of the text after the C Key has been pressed (05_solution.asm)
 
 ![solution05.png](solution05.png)
+
+# 06 Draw Level
+- Example: draws a level (river and land) by changing tile colors (06_level.asm)
+- Exercise: add a gray status bar at the bottom (last five rows) and write the text "Codyvision" (06_solution.asm)
+
+![solution06.png](solution06.png)
