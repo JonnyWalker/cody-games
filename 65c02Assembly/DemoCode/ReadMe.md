@@ -66,3 +66,13 @@ E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
 - Exercise: use WASD keys to move the sprite (08_solution.asm)
 
 Hint: use `CMP`
+
+# 09 Level with moving Sprite
+
+Hint: use the Python scripts in https://github.com/JonnyWalker/cody-games/tree/main/Tools/CodyBASIC to convert images to tile data or sprite data.
+
+E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
+- Example: combines all examples to a level with a moving sprite (09_level_with_sprite.asm)
+- Exercise: add more sprite like in the screenshot below
+
+![solution08.png](solution08.png)
