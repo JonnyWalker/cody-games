@@ -1,5 +1,9 @@
 # Cody 65c02 Assembly Tutorial
 
+# Workflow
+
+Review the Assembly example code along with the comments in each file, then complete the exercise.
+
 # Assemble and Run 
 
 `64tass --mw65c02 --nostart -o 01_bordercolor.bin 01_bordercolor.asm` 
@@ -8,19 +12,30 @@
 
 # 01 Border Color
 - Example: sets border color to red (01_bordercolor.asm)
-- Task: change the color to blue (01_solution.asm)
+- Exercise: change the color to blue (01_solution.asm)
+
+![solution01.png](solution01.png)
 
 # 02 Tile Color
 - Example: change 40 tile colors to cyan (02_tilecolor.asm)
-- Task: draw 20 purple and 20 green tile below the cyan tiles (02_solution.asm)
+- Exercise: draw 20 purple and 20 green tile below the cyan tiles (02_solution.asm)
+
+![solution02.png](solution02.png)
 
 # 03 Tile Data
 - Example: changes 20 tiles in the first row (03_tiledata.asm)
-- Task: draw 20 tiles of type one in the middel row of the screen by starting at tile 490 (03_solution.asm)
+- Exercise: draw 20 tiles of type one in the middel row of the screen by starting at tile 490 (03_solution.asm)
+
+![solution03.png](solution03.png)
 
 # 04 Text 
 - Example: prints the text "HELLO" (04_hello.asm)
-- Task: print the tect "HELLO CODY" (04_solution.asm)
+- Exercise: print the text "HELLO CODY" (04_solution.asm)
+
+![solution04.png](solution04.png)
 
 # 05 Key Input
 - Example: prints the text "HELLO" after the P Key has been pressed (05_pressP.asm)
+- Exercise: Change the bg color of the text after the C Key has been pressed (05_solution.asm)
+
+![solution05.png](solution05.png)
