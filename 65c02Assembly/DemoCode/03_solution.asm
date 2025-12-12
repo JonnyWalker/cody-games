@@ -1,4 +1,4 @@
-; Changes the border color to red
+; draw 20 tiles of type one in the middel row of the screen by starting at tile 490
 
 .include "codyconstants.asm"
 

@@ -1,4 +1,4 @@
-; draws a sprite
+; livel with 8 sprites
 
 .include "codyconstants.asm"
 

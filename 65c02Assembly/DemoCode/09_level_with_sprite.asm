@@ -1,4 +1,4 @@
-; draws a sprite
+; level with sprite
 
 .include "codyconstants.asm"
 

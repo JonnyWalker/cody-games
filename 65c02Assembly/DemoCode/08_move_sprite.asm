@@ -1,4 +1,4 @@
-; draws a sprite
+; moves a sprite (Joystick)
 
 .include "codyconstants.asm"
 

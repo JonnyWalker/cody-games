@@ -1,4 +1,4 @@
-; Changes the border color to red
+; prints the text "HELLO"
 
 .include "codyconstants.asm"
 

@@ -1,4 +1,5 @@
 ; prints a text after the q key has been pressed
+; and change the bg color of the text after the C Key has been pressed
 
 .include "codyconstants.asm"
 

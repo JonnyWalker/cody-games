@@ -1,4 +1,5 @@
 ; Changes the border color to red and draw one line in cyan
+; Also draw a line in purple and green
 
 .include "codyconstants.asm"
 

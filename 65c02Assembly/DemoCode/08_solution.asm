@@ -1,4 +1,4 @@
-; draws a sprite
+; moves a sprite (WASD Keys)
 
 .include "codyconstants.asm"
 

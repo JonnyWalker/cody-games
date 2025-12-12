@@ -1,4 +1,4 @@
-; Changes the border color to red
+; Changes 20 tiles in the first row
 
 .include "codyconstants.asm"
 

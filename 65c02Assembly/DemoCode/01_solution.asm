@@ -1,4 +1,4 @@
-; Changes the border color to red
+; Changes the border color to blue
 
 .include "codyconstants.asm"
 

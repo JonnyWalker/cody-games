@@ -1,4 +1,4 @@
-; draws a sprite
+; draws a sprite in the middle of the screen
 
 .include "codyconstants.asm"
 
