@@ -3,7 +3,8 @@
 A Cody Assembly Game for the [Cody Computer](https://www.codycomputer.org/).
 
 # How to Play
-- Left Player: Joystick 
+- Left player: Joystick Up/Down
+- Right player: W Key, S Key
 
 # Screenshot
 ![codytennis.png](codytennis.png)
@@ -26,5 +27,4 @@ Or put the game on a cartridge.
 
 # TODO:
 - collision with bat
-- WASD for right player
 - player points

@@ -121,8 +121,6 @@ _COPYSPRT   LDA SPRITEDATA,X
 INIT_INPUT
             LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)     
             STA VIA_DDRA
-            LDA #$06            ; Set VIA to read joystick 1
-            STA VIA_IORA
 
             RTS
 
@@ -146,34 +144,73 @@ DRAW_GAME
 
 ; SUBROUTINE HANLDE INPUT
 HANDLE_INPUT
+            LDA #$04            ; Set VIA to read keyboard row 5
+            STA VIA_IORA
+            LDA VIA_IORA        ; Read keyboard
+            LSR A
+            LSR A
+            LSR A
+            CMP #%00011110      ; S Key
+            BEQ _LEFT_BAT_DOWN
+
+            LDA #$05            ; Set VIA to read keyboard row 6
+            STA VIA_IORA
+            LDA VIA_IORA        ; Read keyboard
+            LSR A
+            LSR A
+            LSR A           
+            CMP #%00011110      ; W Key
+            BEQ _LEFT_BAT_UP
+
+            JMP _INPUT_LEFT_DONE 
+
+_LEFT_BAT_DOWN
+            LDA LEFT_BAT_Y     ; SPRITEY++ If not at bottom
+            CMP #(21*8)
+            BEQ _INPUT_LEFT_DONE
+            
+            ADC #2
+            STA LEFT_BAT_Y    
+            JMP _INPUT_LEFT_DONE
+_LEFT_BAT_UP
+            LDA LEFT_BAT_Y     ; SPRITEY-- if not at top
+            CMP #(21+1)        ; +1 to get even number
+            BEQ _INPUT_LEFT_DONE
+
+            SBC #2
+            STA LEFT_BAT_Y     ; update value
+            JMP _INPUT_LEFT_DONE
+
+_INPUT_LEFT_DONE
+            LDA #$06            ; Set VIA to read joystick 1
+            STA VIA_IORA
             LDA VIA_IORA        ; Read joystick
             LSR A
             LSR A
             LSR A
 
             BIT #2              ; Joystick down 
-            BEQ _LEFT_BAT_DOWN
+            BEQ _RIGHT_BAT_DOWN
             
             BIT #1              ; Joystick up 
-            BEQ _LEFT_BAT_UP
-
+            BEQ _RIGHT_BAT_UP
+           
             JMP _INPUT_DONE
-
-_LEFT_BAT_DOWN
-            LDA LEFT_BAT_Y     ; SPRITEY++ If not at bottom
+_RIGHT_BAT_DOWN
+            LDA RIGHT_BAT_Y    ; SPRITEY++ If not at bottom
             CMP #(21*8)
             BEQ _INPUT_DONE
             
             ADC #2
-            STA LEFT_BAT_Y    
+            STA RIGHT_BAT_Y    
             JMP _INPUT_DONE
-_LEFT_BAT_UP
-            LDA LEFT_BAT_Y     ; SPRITEY-- if not at top
+_RIGHT_BAT_UP
+            LDA RIGHT_BAT_Y    ; SPRITEY-- if not at top
             CMP #(21+1)        ; +1 to get even number
             BEQ _INPUT_DONE
 
             SBC #2
-            STA LEFT_BAT_Y     ; update value
+            STA RIGHT_BAT_Y    ; update value
             JMP _INPUT_DONE
 _INPUT_DONE
             RTS
