@@ -26,5 +26,5 @@ Run the program on the Cody computer using the Prop Plug.
 Or put the game on a cartridge.
 
 # TODO:
-- collision with bat
+- better collision detection
 - player points

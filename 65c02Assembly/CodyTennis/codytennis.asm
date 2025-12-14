@@ -2,12 +2,19 @@
 
 .include "codyconstants.asm"
 
+; Variables (program state)
+
 RIGHT_BAT_Y = $D0
 LEFT_BAT_Y  = $D1
 BALL_X      = $D2
 BALL_Y      = $D3
 MOVE_RIGHT  = $D4 ; 0=false 1=true
 MOVE_DOWN   = $D5 ; 0=false 1=true
+
+; Constants
+LEFT_BAT_X = 12+4
+RIGHT_BAT_X = 12*13
+BAT_HEIGT = 42
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -90,7 +97,7 @@ _COPYSPRT   LDA SPRITEDATA,X
             LDA #$12            ; ($A400-$A000)/$C0=$12 see Page 327 for explaination
             STA SPR0_PTR+16     ; SPR0_PTR=$D083+16 (see codyconstants.asm)
 
-            LDA #(12+4)         ; set initial left bat sprite X position
+            LDA #LEFT_BAT_X     ; set initial left bat sprite X position
             STA SPR0_X 
             STA SPR0_X+4       
             LDA #(21*6)         ; set initial left bat sprite Y position
@@ -99,10 +106,10 @@ _COPYSPRT   LDA SPRITEDATA,X
             ADC #20
             STA SPR0_Y+4
 
-            LDA #(12*13)        ; set initial right bat sprite X position
+            LDA #RIGHT_BAT_X    ; set initial right bat sprite X position
             STA SPR0_X+8 
             STA SPR0_X+12       
-            LDA #(21*6)          ; set initial right bat sprite Y position
+            LDA #(21*6)         ; set initial right bat sprite Y position
             STA RIGHT_BAT_Y
             STA SPR0_Y+8
             ADC #20
@@ -227,8 +234,30 @@ _MOVE_RIGHT
             CMP #(160+8) ; screen size (160 pixel) + empty part of ball sprite (8 pixel)
             BEQ _SET_MOVEMENT_TO_LEFT
 
-            ; TODO: check bat right collision 
+            ; check bat right collision by negating this condition
+            ; IF
+            ;   BALL_X == RIGHT_BAT_X+BALL_WIDTH
+            ;   AND (BALL_Y >= RIGHT_BAT_Y AND BALL_Y <= RIGHT_BAT_Y+BAT_HEIGT)
+            ; THEN GOTO _SET_MOVEMENT_TO_LEFT
+            ; ELSE GOTO _UPDATE_RIGHT
 
+            CMP #(RIGHT_BAT_X+4)
+            BNE _UPDATE_RIGHT ; update if BALL_X != RIGHT_BAT_X+4
+            LDA BALL_Y
+            SEC
+            SBC RIGHT_BAT_Y
+            BMI _UPDATE_RIGHT ; update if BALL_Y-RIGHT_BAT_Y<0 (BALL_Y<RIGHT_BAT_Y)
+            LDA RIGHT_BAT_Y
+            ADC #(BAT_HEIGT)
+            SEC
+            SBC BALL_Y
+            BMI _UPDATE_RIGHT ; update if (RIGHT_BAT_Y+BAT_HEIGT)-BALL_Y<0 (RIGHT_BAT_Y+BAT_HEIGT<BALL_Y)
+
+            JMP _SET_MOVEMENT_TO_LEFT ; THEN brnach: condition is true
+
+_UPDATE_RIGHT
+            LDA BALL_X
+            CLC
             ADC #1
             STA BALL_X
             JMP _END_OF_X_UPDATE
@@ -237,8 +266,29 @@ _MOVE_LEFT
             CMP #(12)   ; first visible sprite position
             BEQ _SET_MOVEMENT_TO_RIGHT
 
-            ; TODO: check bat left collision 
+            ; check bat right collision by negating this condition
+            ; IF
+            ;   BALL_X == LEFT_BAT_X+BAT_WIDTH
+            ;   AND (BALL_Y >= LEFT_BAT_Y AND BALL_Y <= LEFT_BAT_Y+BAT_HEIGT)
+            ; THEN GOTO _SET_MOVEMENT_TO_RIGHT
+            ; ELSE GOTO _UPDATE_LEFT
+            CMP #(LEFT_BAT_X+4)
+            BNE _UPDATE_LEFT ; update if BALL_X != LEFT_BAT_X+8
+            LDA BALL_Y
+            SEC
+            SBC LEFT_BAT_Y
+            BMI _UPDATE_LEFT ; update if BALL_Y-LEFT_BAT_Y<0 (BALL_Y<LEFT_BAT_Y)
+            LDA LEFT_BAT_Y
+            ADC #(BAT_HEIGT)
+            SEC
+            SBC BALL_Y
+            BMI _UPDATE_LEFT ; update if (LEFT_BAT_Y+BAT_HEIGT)-BALL_Y<0 (LEFT_BAT_Y+BAT_HEIGT<BALL_Y)
 
+            JMP _SET_MOVEMENT_TO_RIGHT
+
+_UPDATE_LEFT
+            LDA BALL_X
+            SEC
             SBC #1
             STA BALL_X
             JMP _END_OF_X_UPDATE
@@ -283,7 +333,7 @@ _END_OF_Y_UPDATE
 ; DATA SECTION
 SPRITEDATA
 
-.BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00 ; bat sprite (pixels left)
+.BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00 ; left bat sprite (pixels left)
 .BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00
 .BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00
 .BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00
@@ -306,7 +356,7 @@ SPRITEDATA
 .BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00
 
-.BYTE %00_00_00_00, %00_00_00_00, %01_01_01_01 ; bat sprite 2 (pixels right)
+.BYTE %00_00_00_00, %00_00_00_00, %01_01_01_01 ; right bat sprite (pixels right)
 .BYTE %00_00_00_00, %00_00_00_00, %01_01_01_01
 .BYTE %00_00_00_00, %00_00_00_00, %01_01_01_01
 .BYTE %00_00_00_00, %00_00_00_00, %01_01_01_01
