@@ -116,39 +116,47 @@ _COPYSPRT   LDA SPRITEDATA,X
             STA SPR0_Y+16
             RTS
 
-; SUBROUTINE PRINT SCORE
+; SUBROUTINE PRINT SCORE (tile x and tile y) to screen 
 PRINT_SCORE
                 LDY #24
                 LDA TILE_X
+                TAX
+                LDA LUT_BinToDec,X
                 AND #$0F
                 CLC
-                ADC #48    
+                ADC #48
                 STA $C400, Y
                 
                 LDY #23
                 LDA TILE_X 
+                TAX
+                LDA LUT_BinToDec,X
                 LSR A 
                 LSR A 
                 LSR A 
                 LSR A 
-                CLC 
+                CLC
                 ADC #48
                 STA $C400, Y
                 
                 LDY #64
                 LDA TILE_Y
+                TAX
+                LDA LUT_BinToDec,X
                 AND #$0F
                 CLC
-                ADC #48    
+                ADC #48
                 STA $C400, Y
 
                 LDY #63
                 LDA TILE_Y
+                TAX
+                LDA LUT_BinToDec,X
                 LSR A 
                 LSR A 
                 LSR A 
                 LSR A 
-                CLC 
+                CLC
                 ADC #48
                 STA $C400, Y
                 RTS
@@ -480,7 +488,56 @@ TILE_DATA
   .BYTE %00000000
 
 LUT_BinToDec
-                ; TODO
+                .BYTE 0
+                .BYTE 1
+                .BYTE 2
+                .BYTE 3
+                .BYTE 4
+                .BYTE 5
+                .BYTE 6
+                .BYTE 7
+                .BYTE 8
+                .BYTE 9
+                .BYTE %00010000
+                .BYTE %00010001
+                .BYTE %00010010
+                .BYTE %00010011
+                .BYTE %00010100
+                .BYTE %00010101
+                .BYTE %00010110
+                .BYTE %00010111
+                .BYTE %00011000
+                .BYTE %00011001
+                .BYTE %00100000
+                .BYTE %00100001
+                .BYTE %00100010
+                .BYTE %00100011
+                .BYTE %00100100
+                .BYTE %00100101
+                .BYTE %00100110
+                .BYTE %00100111
+                .BYTE %00101000
+                .BYTE %00101001
+                .BYTE %00110000
+                .BYTE %00110001
+                .BYTE %00110010
+                .BYTE %00110011
+                .BYTE %00110100
+                .BYTE %00110101
+                .BYTE %00110110
+                .BYTE %00110111
+                .BYTE %00111000
+                .BYTE %00111001
+                .BYTE %01000000
+                .BYTE %01000001
+                .BYTE %01000010
+                .BYTE %01000011
+                .BYTE %01000100
+                .BYTE %01000101
+                .BYTE %01000110
+                .BYTE %01000111
+                .BYTE %01001000
+                .BYTE %01001001
 
 MAP_DATA
   .BYTE 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 9, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
