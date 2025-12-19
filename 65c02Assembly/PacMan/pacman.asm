@@ -2,11 +2,13 @@
 
 .include "codyconstants.asm"
 
-TILE_NUM          = 24                  ; 14 Tiles
-NUMBER_TILE_START = 14                  ; start of tiles 0 .. 9
-TEMP              = $A0
-TILE_X            = $A2                 ; current x tile of pacman
-TILE_Y            = $A3                 ; current y tile of pacman
+TILE_NUM         = 24                   ; 14 Tiles
+DIGIT_TILE_START = 14                   ; start of tiles 0 .. 9
+
+TILE_X           = $A0                  ; current x tile pos of pacman
+TILE_Y           = $A1                  ; current y tile pos of pacman
+TILE_NUMBER      = $A2                  ; number of the current tile (computed by tile x / y)
+TEMP             = $A4
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -36,8 +38,9 @@ MAIN                                ; The program starts running from here
 
 _LOOP       
                 JSR HANDLE_INPUT
-                JSR COMPUTE_TILE
-                JSR PRINT_SCORE
+                JSR COMPUTE_PLAYER_TILE
+                JSR READ_PLAYER_TILE
+                JSR PRINT_DEBUG
                 JSR WAIT_BLANK
                 JMP _LOOP           ; Loops forever
 
@@ -117,15 +120,15 @@ _COPYSPRT       LDA SPRITEDATA,X
                 STA SPR0_Y+16
                 RTS
 
-; SUBROUTINE PRINT SCORE (tile x and tile y) to screen 
-PRINT_SCORE
+; SUBROUTINE PRINT DEBUG (tile x and tile y) to screen 
+PRINT_DEBUG
                 LDY #24
                 LDA TILE_X
                 TAX
                 LDA LUT_BinToBCD,X
                 AND #$0F
                 CLC
-                ADC #(NUMBER_TILE_START)
+                ADC #(DIGIT_TILE_START)
                 STA $C400, Y
                 
                 LDY #23
@@ -137,7 +140,7 @@ PRINT_SCORE
                 LSR A 
                 LSR A 
                 CLC
-                ADC #(NUMBER_TILE_START)
+                ADC #(DIGIT_TILE_START)
                 STA $C400, Y
                 
                 LDY #64
@@ -146,7 +149,7 @@ PRINT_SCORE
                 LDA LUT_BinToBCD,X
                 AND #$0F
                 CLC
-                ADC #(NUMBER_TILE_START)
+                ADC #(DIGIT_TILE_START)
                 STA $C400, Y
 
                 LDY #63
@@ -158,13 +161,35 @@ PRINT_SCORE
                 LSR A 
                 LSR A 
                 CLC
-                ADC #(NUMBER_TILE_START)
+                ADC #(DIGIT_TILE_START)
                 STA $C400, Y
+
+                LDY #104                ; print tile number (value)
+                LDA TILE_NUMBER
+                TAX
+                LDA LUT_BinToBCD,X
+                AND #$0F
+                CLC
+                ADC #(DIGIT_TILE_START)
+                STA $C400, Y
+
+                LDY #103
+                LDA TILE_NUMBER
+                TAX
+                LDA LUT_BinToBCD,X
+                LSR A 
+                LSR A 
+                LSR A 
+                LSR A 
+                CLC
+                ADC #(DIGIT_TILE_START)
+                STA $C400, Y
+
                 RTS
 
 ; SUBROUTINE COMPUTE TILE
 ; Read PacMan Sprite pos (x,y) and Print it in screen memory
-COMPUTE_TILE
+COMPUTE_PLAYER_TILE
                 LDA SPR0_X+16
                 LSR 
                 LSR 
@@ -175,7 +200,43 @@ COMPUTE_TILE
                 LSR 
                 LSR
                 STA TILE_Y
-                RTS 
+                RTS
+
+; SUBROUTINE READ PLAYER TILE
+; Reads the tile number of the current tile of the player.
+; The memory location TILE_NUMBER is first used to compute 
+; the index and then to hold its value.
+READ_PLAYER_TILE
+                LDA #$00                ; use immediate of screen mem (we compute an index)
+                STA TILE_NUMBER+0
+                LDA #$C4             
+                STA TILE_NUMBER+1
+                LDY TILE_Y              ; loop y times 
+_COMPUTE_ROW
+                CLC 
+                LDA TILE_NUMBER+0
+                ADC #40                 ; 40 tiles in a row
+                STA TILE_NUMBER+0
+                LDA TILE_NUMBER+1
+                ADC #0
+                STA TILE_NUMBER+1
+                DEY
+                CPY #0
+                BNE _COMPUTE_ROW
+
+                CLC 
+                LDA TILE_NUMBER+0
+                ADC TILE_X              ; compute column
+                STA TILE_NUMBER+0
+                LDA TILE_NUMBER+1
+                ADC #0
+                STA TILE_NUMBER+1
+
+                LDA (TILE_NUMBER)       ; use index to compute value
+                STA TILE_NUMBER+0
+                STZ TILE_NUMBER+1
+
+                RTS
 
 ; SUBROUTINE LOAD TILES
 ; Load level by copying tiles from tile map
