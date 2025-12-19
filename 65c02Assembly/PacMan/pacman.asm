@@ -7,8 +7,9 @@ DIGIT_TILE_START = 14                   ; start of tiles 0 .. 9
 
 TILE_X           = $A0                  ; current x tile pos of pacman
 TILE_Y           = $A1                  ; current y tile pos of pacman
-TILE_NUMBER      = $A2                  ; number of the current tile (computed by tile x / y)
-TEMP             = $A4
+TILE_INDEX       = $A2                  ; index of the current tile (computed by tile x / y)
+TILE_NUMBER      = $A4                  ; number of the current tile (computed by tile x / y)
+TEMP             = $A5
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -40,6 +41,7 @@ _LOOP
                 JSR HANDLE_INPUT
                 JSR COMPUTE_PLAYER_TILE
                 JSR READ_PLAYER_TILE
+                JSR EAT_PILL
                 JSR PRINT_DEBUG
                 JSR WAIT_BLANK
                 JMP _LOOP           ; Loops forever
@@ -189,13 +191,18 @@ PRINT_DEBUG
 
 ; SUBROUTINE COMPUTE TILE
 ; Read PacMan Sprite pos (x,y) and Print it in screen memory
+; First visible position: 12,21 Middle of sprite 5,5
 COMPUTE_PLAYER_TILE
-                LDA SPR0_X+16
+                LDA SPR0_X+16           ; (X-(12+5)) / 4 pixels
+                SEC
+                SBC #(12-5)
                 LSR 
                 LSR 
                 STA TILE_X
 
-                LDA SPR0_Y+16
+                LDA SPR0_Y+16           ; (X-(21+5)) / 8 pixels
+                SEC
+                SBC #(21-5)
                 LSR 
                 LSR 
                 LSR
@@ -204,37 +211,36 @@ COMPUTE_PLAYER_TILE
 
 ; SUBROUTINE READ PLAYER TILE
 ; Reads the tile number of the current tile of the player.
-; The memory location TILE_NUMBER is first used to compute 
-; the index and then to hold its value.
+; Compute the tile index: TILE_INDEX.
+; Compute the tile value at this index: TILE_NUMBER
 READ_PLAYER_TILE
                 LDA #$00                ; use immediate of screen mem (we compute an index)
-                STA TILE_NUMBER+0
+                STA TILE_INDEX+0
                 LDA #$C4             
-                STA TILE_NUMBER+1
+                STA TILE_INDEX+1
                 LDY TILE_Y              ; loop y times 
 _COMPUTE_ROW
                 CLC 
-                LDA TILE_NUMBER+0
+                LDA TILE_INDEX+0
                 ADC #40                 ; 40 tiles in a row
-                STA TILE_NUMBER+0
-                LDA TILE_NUMBER+1
+                STA TILE_INDEX+0
+                LDA TILE_INDEX+1
                 ADC #0
-                STA TILE_NUMBER+1
+                STA TILE_INDEX+1
                 DEY
                 CPY #0
                 BNE _COMPUTE_ROW
 
                 CLC 
-                LDA TILE_NUMBER+0
+                LDA TILE_INDEX+0
                 ADC TILE_X              ; compute column
-                STA TILE_NUMBER+0
-                LDA TILE_NUMBER+1
+                STA TILE_INDEX+0
+                LDA TILE_INDEX+1
                 ADC #0
-                STA TILE_NUMBER+1
+                STA TILE_INDEX+1
 
-                LDA (TILE_NUMBER)       ; use index to compute value
-                STA TILE_NUMBER+0
-                STZ TILE_NUMBER+1
+                LDA (TILE_INDEX)       ; use index to compute value
+                STA TILE_NUMBER
 
                 RTS
 
@@ -370,6 +376,21 @@ _RIGHT
 _INPUT_DONE
                 RTS
 
+; SUBROUTINE EAT PILL
+; Remove pill if PacMan is on pill tile
+EAT_PILL
+                ; 0 = empty, 1 = pill
+                ; if tile_number = 1 then
+                ; tiles[tile_index] = 0
+                LDA TILE_NUMBER
+                CMP #1
+                BNE _END_OF_EAT
+
+                ; tiles[tile_index] = 0
+                LDA #0
+                STA (TILE_INDEX)
+_END_OF_EAT
+                RTS
 
 ; DATA SECTION
 SPRITEDATA
