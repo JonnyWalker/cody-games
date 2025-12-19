@@ -4,14 +4,14 @@ A Cody Assembly Game for the [Cody Computer](https://www.codycomputer.org/).
 
 # How to Play
 
-None
+Mova PacMan: WASD / Joystick
 
 # Screenshot
 ![pacman.png](pacman.png)
 
 # Author
 
-John Witulski
+John Witulski, Lukas Lang, Timo Mauerer, Sinan Flicker
 
 # Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
