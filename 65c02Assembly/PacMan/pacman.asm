@@ -2,7 +2,10 @@
 
 .include "codyconstants.asm"
 
-TILE_NUM = 14                   ; 14 Tiles
+TILE_NUM        = 14                   ; 14 Tiles
+TEMP            = $A0
+TILE_X          = $A2
+TILE_Y          = $A3
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -21,55 +24,42 @@ MAIN                            ; The program starts running from here
             STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
 
             LDA #$E7            ; Store shared colors (light blue=14 and yellow=7)
-            STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm) 
+            STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
-            LDX #0              ; Copy character
-_COPYCHAR   LDA TILE_DATA,X
-            STA $C800,X
-            INX
-            CPX #(8*TILE_NUM)          ; every tile is 8 Bytes, TILE_NUM tiles
-            BNE _COPYCHAR
- 
-            LDY #0               ; every loop copies 240 tiles
-_ROWS
-            LDA MAP_DATA,Y      
-            STA $C400, Y
-            INY
-            CPY #240
-            BNE _ROWS
+            JSR LOAD_TILES 
+            JSR INIT_INPUT
+            JSR INIT_SPRITES
 
-            LDY #0
-_ROWS2
-            LDA MAP_DATA2,Y      
-            STA $C4F0, Y    ; + 240 
-            INY
-            CPY #240
-            BNE _ROWS2
+            STZ TILE_X 
+            STZ TILE_Y
 
-            LDY #0
-_ROWS3
-            LDA MAP_DATA3,Y      
-            STA $C5E0, Y    ; + 240*2
-            INY
-            CPY #240
-            BNE _ROWS3
+_LOOP       
+            JSR HANDLE_INPUT
+            JSR COMPUTE_TILE
+            JSR PRINT_SCORE
+            JSR WAIT_BLANK
+            JMP _LOOP           ; Loops forever
 
-            LDY #0
-_ROWS4
-            LDA MAP_DATA4,Y      
-            STA $C6D0, Y    ; + 240*3
-            INY
-            CPY #240
-            BNE _ROWS4
+; SUBROUTUNE WAIT BLANK
+WAIT_BLANK
+_WAITVIS    LDA VID_BLNK        ; Wait until the blanking is zero (drawing the screen)
+            BNE _WAITVIS
+            
+_WAITBLANK  LDA VID_BLNK        ; Wait until the blanking is one (not drawing the screen)
+            BEQ _WAITBLANK
+            
+            RTS
 
-            LDY #0
-_ROWS5
-            LDA MAP_DATA5,Y      
-            STA $C7C0, Y    ; + 240*4
-            INY
-            CPY #40
-            BNE _ROWS5
+; SUBROUTINE INIT INPUT
+INIT_INPUT
+            LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)     
+            STA VIA_DDRA
 
+            RTS
+
+; SUBROUTINE INIT SPRITES
+; copy sprite data and init sprite banks: 4 ghosts and one pacman
+INIT_SPRITES
             LDX #0              ; Copy sprite data into video memory
 _COPYSPRT   LDA SPRITEDATA,X
             STA $A400,X         ; sprite pixel data location. Page 327 and 535 
@@ -124,8 +114,193 @@ _COPYSPRT   LDA SPRITEDATA,X
             STA SPR0_X+16       
             LDA #(21+96)
             STA SPR0_Y+16
+            RTS
 
-_DONE       JMP _DONE           ; Loops forever
+; SUBROUTINE PRINT SCORE
+PRINT_SCORE
+                LDY #24
+                LDA TILE_X
+                AND #$0F
+                CLC
+                ADC #48    
+                STA $C400, Y
+                
+                LDY #23
+                LDA TILE_X 
+                LSR A 
+                LSR A 
+                LSR A 
+                LSR A 
+                CLC 
+                ADC #48
+                STA $C400, Y
+                
+                LDY #64
+                LDA TILE_Y
+                AND #$0F
+                CLC
+                ADC #48    
+                STA $C400, Y
+
+                LDY #63
+                LDA TILE_Y
+                LSR A 
+                LSR A 
+                LSR A 
+                LSR A 
+                CLC 
+                ADC #48
+                STA $C400, Y
+                RTS
+
+; SUBROUTINE COMPUTE TILE
+; Read PacMan Sprite pos (x,y) and Print it in screen memory
+COMPUTE_TILE
+                LDA SPR0_X+16
+                LSR 
+                LSR 
+                STA TILE_X
+
+                LDA SPR0_Y+16
+                LSR 
+                LSR 
+                LSR
+                STA TILE_Y
+                RTS 
+
+; SUBROUTINE LOAD TILES
+; Load level by copying tiles from tile map
+LOAD_TILES
+            LDX #0               ; Copy character
+_COPYCHAR   LDA TILE_DATA,X
+            STA $C800,X
+            INX
+            CPX #(8*TILE_NUM)    ; every tile is 8 Bytes big, TILE_NUM tiles
+            BNE _COPYCHAR
+ 
+            LDY #0               ; every loop copies 240 tile numbers, except the last one
+_ROWS
+            LDA MAP_DATA,Y      
+            STA $C400, Y
+            INY
+            CPY #240
+            BNE _ROWS
+
+            LDY #0
+_ROWS2
+            LDA MAP_DATA2,Y      
+            STA $C4F0, Y    ; + 240 
+            INY
+            CPY #240
+            BNE _ROWS2
+
+            LDY #0
+_ROWS3
+            LDA MAP_DATA3,Y      
+            STA $C5E0, Y    ; + 240*2
+            INY
+            CPY #240
+            BNE _ROWS3
+
+            LDY #0
+_ROWS4
+            LDA MAP_DATA4,Y      
+            STA $C6D0, Y    ; + 240*3
+            INY
+            CPY #240
+            BNE _ROWS4
+
+            LDY #0
+_ROWS5
+            LDA MAP_DATA5,Y      
+            STA $C7C0, Y    ; + 240*4
+            INY
+            CPY #40         ; copy only 40 tile numbers
+            BNE _ROWS5
+            RTS
+
+; SUBROUTINE HANLDE INPUT
+; Reads WASD / Joystick Keys and moved PacMan sprite
+HANDLE_INPUT
+
+            LDA #$01            ; Set VIA to read keyboard row 2
+            STA VIA_IORA
+            LDA VIA_IORA        ; Read keyboard
+            LSR A
+            LSR A
+            LSR A           
+            CMP #%00011110      ; A Key
+            BEQ _LEFT
+
+            LDA VIA_IORA        ; Read keyboard
+            LSR A
+            LSR A
+            LSR A           
+            CMP #%00011101      ; D Key
+            BEQ _RIGHT
+
+            LDA #$04            ; Set VIA to read keyboard row 5
+            STA VIA_IORA
+            LDA VIA_IORA        ; Read keyboard
+            LSR A
+            LSR A
+            LSR A
+            CMP #%00011110      ; S Key
+            BEQ _DOWN
+
+            LDA #$05            ; Set VIA to read keyboard row 6
+            STA VIA_IORA
+            LDA VIA_IORA        ; Read keyboard
+            LSR A
+            LSR A
+            LSR A           
+            CMP #%00011110      ; W Key
+            BEQ _UP
+
+            LDA #$06            ; Set VIA to read joystick 1
+            STA VIA_IORA
+            LDA VIA_IORA        ; Read joystick
+            LSR A
+            LSR A
+            LSR A
+
+            BIT #8              ; Joystick right
+            BEQ _RIGHT
+
+            BIT #4              ; Joystick left
+            BEQ _LEFT
+
+            BIT #2              ; Joystick down 
+            BEQ _DOWN
+            
+            BIT #1              ; Joystick up 
+            BEQ _UP
+
+            JMP _INPUT_DONE 
+
+_DOWN
+            LDA SPR0_Y+16
+            INC A
+            STA SPR0_Y+16    ; update value 
+            JMP _INPUT_DONE
+_UP
+            LDA SPR0_Y+16
+            DEC A
+            STA SPR0_Y+16    ; update value
+            JMP _INPUT_DONE
+_LEFT
+            LDA SPR0_X+16
+            DEC A
+            STA SPR0_X+16    ; update value
+            JMP _INPUT_DONE
+_RIGHT
+            LDA SPR0_X+16
+            INC A
+            STA SPR0_X+16    ; update value
+            JMP _INPUT_DONE
+_INPUT_DONE
+            RTS
+
 
 ; DATA SECTION
 SPRITEDATA
@@ -303,6 +478,9 @@ TILE_DATA
   .BYTE %11111111
   .BYTE %00000000
   .BYTE %00000000
+
+LUT_BinToDec
+                ; TODO
 
 MAP_DATA
   .BYTE 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 9, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
