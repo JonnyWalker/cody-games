@@ -1,9 +1,11 @@
-; PacMan
+; PacMan clone
 
 .include "codyconstants.asm"
 
-TILE_NUM         = 24                   ; 14 Tiles
+TILE_NUM         = 24                   ; number of tiles
 DIGIT_TILE_START = 14                   ; start of tiles 0 .. 9
+SPRITE_WIDTH     = 12
+SPRITE_HEIGHT    = 21
 
 TILE_X           = $A0                  ; current x tile pos of pacman
 TILE_Y           = $A1                  ; current y tile pos of pacman
@@ -13,22 +15,22 @@ TEMP             = $A5
 
 ; Program header for Cody Basic's loader (needs to be first)
 
-.WORD ADDR                      ; Starting address (just like KIM-1, Commodore, etc.)
-.WORD (ADDR + LAST - MAIN - 1)  ; Ending address (so we know when we're done loading)
+.WORD ADDR                              ; Starting address (just like KIM-1, Commodore, etc.)
+.WORD (ADDR + LAST - MAIN - 1)          ; Ending address (so we know when we're done loading)
 
 ; The actual program.
-.LOGICAL    ADDR                ; The actual program gets loaded at ADDR
+.LOGICAL    ADDR                        ; The actual program gets loaded at ADDR
 
-MAIN                                ; The program starts running from here
-                LDA #$E0            ; Set border color (Bits 0-3) to black=0 
+MAIN                                    ; The program starts running from here
+                LDA #$E0                ; Set border color (Bits 0-3) to black=0 
                                         ; and set color memory to $D800 (A000+14*1024=D800), E=14
-                STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)
-                LDA #$95            ; Set character memory to $C800 (A000+5*2048=C800)
+                STA VID_COLR            ; VID_COLR=$D002 (see codyconstants.asm)
+                LDA #$95                ; Set character memory to $C800 (A000+5*2048=C800)
                                         ; and set screen memory location $C400 (A000+9*1024=C400)
-                STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
+                STA VID_BPTR            ; VID_BPTR=$D003 (see codyconstants.asm)
                 
-                LDA #$E7            ; Store shared colors (light blue=14 and yellow=7)
-                STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
+                LDA #$E7                ; Store shared colors (light blue=14 and yellow=7)
+                STA VID_SCRC            ; VID_SCRC=$D005 (see codyconstants.asm)
                 
                 JSR LOAD_TILES 
                 JSR INIT_INPUT
@@ -44,21 +46,21 @@ _LOOP
                 JSR EAT_PILL
                 JSR PRINT_DEBUG
                 JSR WAIT_BLANK
-                JMP _LOOP           ; Loops forever
+                JMP _LOOP               ; Loops forever
 
 ; SUBROUTUNE WAIT BLANK
 WAIT_BLANK
-_WAITVIS        LDA VID_BLNK        ; Wait until the blanking is zero (drawing the screen)
+_WAITVIS        LDA VID_BLNK            ; Wait until the blanking is zero (drawing the screen)
                 BNE _WAITVIS
             
-_WAITBLANK      LDA VID_BLNK        ; Wait until the blanking is one (not drawing the screen)
+_WAITBLANK      LDA VID_BLNK            ; Wait until the blanking is one (not drawing the screen)
                 BEQ _WAITBLANK
                 
                 RTS
 
 ; SUBROUTINE INIT INPUT
 INIT_INPUT
-                LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)     
+                LDA #$07                ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)     
                 STA VIA_DDRA
                 
                 RTS
@@ -66,86 +68,86 @@ INIT_INPUT
 ; SUBROUTINE INIT SPRITES
 ; copy sprite data and init sprite banks: 4 ghosts and one pacman
 INIT_SPRITES
-                LDX #0              ; Copy sprite data into video memory
+                LDX #0                  ; Copy sprite data into video memory
 _COPYSPRT       LDA SPRITEDATA,X
-                STA $A400,X         ; sprite pixel data location. Page 327 and 535 
+                STA $A400,X             ; sprite pixel data location. Page 327 and 535 
                 INX
-                CPX #(64*2)         ; copy data for 2 sprites 
+                CPX #(64*2)             ; copy data for 2 sprites 
                 BNE _COPYSPRT
                 
-                LDA #$00            ; Sprite bank 0, black as common sprite color 
-                STA VID_SPRC        ; VID_SPRC=$D006 (see codyconstants.asm)
+                LDA #$00                ; Sprite bank 0, black as common sprite color 
+                STA VID_SPRC            ; VID_SPRC=$D006 (see codyconstants.asm)
                 
-                LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
-                STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)
-                LDA #$12            ; red=2 color 1, white=1 color 2 
-                STA SPR0_COL        ; SPR0_COL=$D082 (see codyconstants.asm)
-                LDA #80             ; set initial sprite X position
+                LDA #$10                ; ($A400-$A000)/$40=$10 see Page 327 for explaination
+                STA SPR0_PTR            ; SPR0_PTR=$D083 (see codyconstants.asm)
+                LDA #$12                ; red=2 color 1, white=1 color 2 
+                STA SPR0_COL            ; SPR0_COL=$D082 (see codyconstants.asm)
+                LDA #80                 ; set initial sprite X position
                 STA SPR0_X       
                 LDA #(21+8)
                 STA SPR0_Y
                 
-                LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
-                STA SPR0_PTR+4      ; SPR0_PTR=$D083 (see codyconstants.asm)
-                LDA #$1A            ; A color 1, white=1 color 2 
-                STA SPR0_COL+4      ; SPR0_COL=$D082 (see codyconstants.asm)
-                LDA #(80-8)         ; set initial sprite X position
+                LDA #$10                ; ghost, like above
+                STA SPR0_PTR+4          
+                LDA #$1A                ; light red=A color 1, white=1 color 2 
+                STA SPR0_COL+4
+                LDA #(80-8) 
                 STA SPR0_X+4       
                 LDA #(21+32)
                 STA SPR0_Y+4
                 
-                LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
-                STA SPR0_PTR+8      ; SPR0_PTR=$D083 (see codyconstants.asm)
-                LDA #$1E            ; E color 1, white=1 color 2 
-                STA SPR0_COL+8      ; SPR0_COL=$D082 (see codyconstants.asm)
-                LDA #(16)           ; set initial sprite X position
+                LDA #$10                ; ghost, like above
+                STA SPR0_PTR+8 
+                LDA #$1E                ; light blue=E color 1, white=1 color 2 
+                STA SPR0_COL+8 
+                LDA #(16)
                 STA SPR0_X+8       
                 LDA #(21+32)
                 STA SPR0_Y+8
                 
-                LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
-                STA SPR0_PTR+12     ; SPR0_PTR=$D083 (see codyconstants.asm)
-                LDA #$1D            ; D color 1, white=1 color 2 
-                STA SPR0_COL+12     ; SPR0_COL=$D082 (see codyconstants.asm)
-                LDA #(32)           ; set initial sprite X position
+                LDA #$10                ; ghost, like above
+                STA SPR0_PTR+12 
+                LDA #$1D                ; lihgt gray=D color 1, white=1 color 2 
+                STA SPR0_COL+12      
+                LDA #(32)            
                 STA SPR0_X+12       
                 LDA #(21+40)
                 STA SPR0_Y+12
                 
-                LDA #$11            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
-                STA SPR0_PTR+16     ; SPR0_PTR=$D083 (see codyconstants.asm)
-                LDA #$07            ; yellow=7 color 1, black=1 color 2 (not used in sprite)
-                STA SPR0_COL+16     ; SPR0_COL=$D082 (see codyconstants.asm)
-                LDA #(12+64)        ; set initial sprite X position
+                LDA #$11                ; pacman, like above
+                STA SPR0_PTR+16      
+                LDA #$07                ; yellow=7 color 1, black=1 color 2 (not used in sprite)
+                STA SPR0_COL+16      
+                LDA #(12+64)         
                 STA SPR0_X+16       
                 LDA #(21+96)
                 STA SPR0_Y+16
                 RTS
 
-; SUBROUTINE PRINT DEBUG (tile x and tile y) to screen 
+; SUBROUTINE PRINT DEBUG (tile x, tile y, tile number) to screen 
 PRINT_DEBUG
-                LDY #24
+                LDY #24                 ; Y=tile index (postion on the screen)
                 LDA TILE_X
                 TAX
-                LDA LUT_BinToBCD,X
-                AND #$0F
+                LDA LUT_BinToBCD,X      ; convert to BCD
+                AND #$0F                ; get low byte
                 CLC
-                ADC #(DIGIT_TILE_START)
-                STA $C400, Y
+                ADC #(DIGIT_TILE_START) ; look up digit graphic ...
+                STA $C400, Y            ; and put it at position Y
                 
-                LDY #23
+                LDY #23                 ; Y=tile index (postion on the screen)
                 LDA TILE_X 
                 TAX
-                LDA LUT_BinToBCD,X
-                LSR A 
+                LDA LUT_BinToBCD,X      ; convert to BCD
+                LSR A                   ; get high byte by shifting 4 Bits to the right
                 LSR A 
                 LSR A 
                 LSR A 
                 CLC
-                ADC #(DIGIT_TILE_START)
-                STA $C400, Y
+                ADC #(DIGIT_TILE_START) ; look up digit graphic ...
+                STA $C400, Y            ; and put it at position Y
                 
-                LDY #64
+                LDY #64                 ; print Tile_Y the same way
                 LDA TILE_Y
                 TAX
                 LDA LUT_BinToBCD,X
@@ -191,18 +193,18 @@ PRINT_DEBUG
 
 ; SUBROUTINE COMPUTE TILE
 ; Read PacMan Sprite pos (x,y) and Print it in screen memory
-; First visible position: 12,21 Middle of sprite 5,5
+; First visible position: SPRITE_WIDTH= 12,SPRITE_HEIGHT=21 middle of sprite 5,5
 COMPUTE_PLAYER_TILE
                 LDA SPR0_X+16           ; (X-(12+5)) / 4 pixels
                 SEC
-                SBC #(12-5)
+                SBC #(SPRITE_WIDTH-5)
                 LSR 
                 LSR 
                 STA TILE_X
 
                 LDA SPR0_Y+16           ; (X-(21+5)) / 8 pixels
                 SEC
-                SBC #(21-5)
+                SBC #(SPRITE_HEIGHT-5)
                 LSR 
                 LSR 
                 LSR
@@ -211,8 +213,8 @@ COMPUTE_PLAYER_TILE
 
 ; SUBROUTINE READ PLAYER TILE
 ; Reads the tile number of the current tile of the player.
-; Compute the tile index: TILE_INDEX.
-; Compute the tile value at this index: TILE_NUMBER
+; Compute the tile index: TILE_INDEX (16-Bit).
+; Compute the tile value at this index: TILE_NUMBER (8-Bit).
 READ_PLAYER_TILE
                 LDA #$00                ; use immediate of screen mem (we compute an index)
                 STA TILE_INDEX+0
@@ -265,7 +267,7 @@ _ROWS
                 LDY #0
 _ROWS2
                 LDA MAP_DATA2,Y      
-                STA $C4F0, Y    ; + 240 
+                STA $C4F0, Y            ; + 240 
                 INY
                 CPY #240
                 BNE _ROWS2
@@ -273,7 +275,7 @@ _ROWS2
                 LDY #0
 _ROWS3
                 LDA MAP_DATA3,Y      
-                STA $C5E0, Y    ; + 240*2
+                STA $C5E0, Y            ; + 240*2
                 INY
                 CPY #240
                 BNE _ROWS3
@@ -281,7 +283,7 @@ _ROWS3
                 LDY #0
 _ROWS4
                 LDA MAP_DATA4,Y      
-                STA $C6D0, Y    ; + 240*3
+                STA $C6D0, Y            ; + 240*3
                 INY
                 CPY #240
                 BNE _ROWS4
@@ -289,66 +291,66 @@ _ROWS4
                 LDY #0
 _ROWS5
                 LDA MAP_DATA5,Y      
-                STA $C7C0, Y    ; + 240*4
+                STA $C7C0, Y            ; + 240*4
                 INY
-                CPY #40         ; copy only 40 tile numbers
+                CPY #40                 ; copy only 40 tile numbers
                 BNE _ROWS5
                 RTS
 
 ; SUBROUTINE HANLDE INPUT
 ; Reads WASD / Joystick Keys and moved PacMan sprite
 HANDLE_INPUT
-                LDA #$01            ; Set VIA to read keyboard row 2
+                LDA #$01                ; Set VIA to read keyboard row 2
                 STA VIA_IORA
-                LDA VIA_IORA        ; Read keyboard
+                LDA VIA_IORA            ; Read keyboard
                 LSR A
                 LSR A
                 LSR A           
-                CMP #%00011110      ; A Key
+                CMP #%00011110          ; A Key pressed
                 BEQ _LEFT
                 
-                LDA VIA_IORA        ; Read keyboard
+                LDA VIA_IORA            ; Read keyboard
                 LSR A
                 LSR A
                 LSR A           
-                CMP #%00011101      ; D Key
+                CMP #%00011101          ; D Key pressed
                 BEQ _RIGHT
                 
-                LDA #$04            ; Set VIA to read keyboard row 5
+                LDA #$04                ; Set VIA to read keyboard row 5
                 STA VIA_IORA
-                LDA VIA_IORA        ; Read keyboard
+                LDA VIA_IORA            ; Read keyboard
                 LSR A
                 LSR A
                 LSR A
-                CMP #%00011110      ; S Key
+                CMP #%00011110          ; S Key pressed
                 BEQ _DOWN
                 
-                LDA #$05            ; Set VIA to read keyboard row 6
+                LDA #$05                ; Set VIA to read keyboard row 6
                 STA VIA_IORA
-                LDA VIA_IORA        ; Read keyboard
+                LDA VIA_IORA            ; Read keyboard
                 LSR A
                 LSR A
                 LSR A           
-                CMP #%00011110      ; W Key
+                CMP #%00011110          ; W Key pressed
                 BEQ _UP
                 
-                LDA #$06            ; Set VIA to read joystick 1
+                LDA #$06                ; Set VIA to read joystick 1
                 STA VIA_IORA
-                LDA VIA_IORA        ; Read joystick
+                LDA VIA_IORA            ; Read joystick
                 LSR A
                 LSR A
                 LSR A
                 
-                BIT #8              ; Joystick right
+                BIT #8                  ; Joystick right pressed
                 BEQ _RIGHT
                 
-                BIT #4              ; Joystick left
+                BIT #4                  ; Joystick left pressed
                 BEQ _LEFT
                 
-                BIT #2              ; Joystick down 
+                BIT #2                  ; Joystick down pressed
                 BEQ _DOWN
                 
-                BIT #1              ; Joystick up 
+                BIT #1                  ; Joystick up pressed
                 BEQ _UP
                 
                 JMP _INPUT_DONE 
@@ -356,28 +358,28 @@ HANDLE_INPUT
 _DOWN
                 LDA SPR0_Y+16
                 INC A
-                STA SPR0_Y+16    ; update value 
+                STA SPR0_Y+16           ; update value: move pacman down 
                 JMP _INPUT_DONE
 _UP
                 LDA SPR0_Y+16
                 DEC A
-                STA SPR0_Y+16    ; update value
+                STA SPR0_Y+16           ; update value: move pacman up 
                 JMP _INPUT_DONE
 _LEFT
                 LDA SPR0_X+16
                 DEC A
-                STA SPR0_X+16    ; update value
+                STA SPR0_X+16           ; update value: move pacman left 
                 JMP _INPUT_DONE
 _RIGHT
                 LDA SPR0_X+16
                 INC A
-                STA SPR0_X+16    ; update value
+                STA SPR0_X+16           ; update value: move pacman right 
                 JMP _INPUT_DONE
 _INPUT_DONE
                 RTS
 
 ; SUBROUTINE EAT PILL
-; Remove pill if PacMan is on pill tile
+; Remove pill if PacMan is on "pill tile"
 EAT_PILL
                 ; 0 = empty, 1 = pill
                 ; if tile_number = 1 then
@@ -418,7 +420,7 @@ SPRITEDATA
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00
 
-.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; pacman
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; pacman, left
 .BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
 .BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
 .BYTE %00_01_01_01, %01_01_01_01, %00_00_00_00
