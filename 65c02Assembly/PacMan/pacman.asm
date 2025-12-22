@@ -1,17 +1,21 @@
 ; PacMan clone
+; 
 
 .include "codyconstants.asm"
 
+; Aviod magic numbers
 TILE_NUM         = 28                   ; number of tiles
-DIGIT_TILE_START = 18                   ; start of tiles 0 .. 9
+DIGIT_TILE_START = 18                   ; start of tiles 0 .. 9 in tile data
 SPRITE_WIDTH     = 12
 SPRITE_HEIGHT    = 21
 
+; Game state
 TILE_X           = $A0                  ; current x tile pos of pacman
 TILE_Y           = $A1                  ; current y tile pos of pacman
-TILE_INDEX       = $A2                  ; index of the current tile (computed by tile x / y)
-TILE_NUMBER      = $A4                  ; number of the current tile (computed by tile x / y)
-TEMP             = $A5
+TILE_INDEX       = $A2                  ; index of the current tile (computed by tile x, y)
+TILE_NUMBER      = $A4                  ; number of the current tile (computed by tile x, y)
+PACMAN_FRAME_NUM = $A5                  ; current frame number, used for animation
+PACMAN_DIRECTION = $A6
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -38,15 +42,18 @@ MAIN                                    ; The program starts running from here
                 
                 STZ TILE_X 
                 STZ TILE_Y
+                STZ PACMAN_FRAME_NUM
+                ; TODO PACMAN_DIRECTION
 
 _LOOP       
-                JSR HANDLE_INPUT
                 JSR COMPUTE_PLAYER_TILE
                 JSR READ_PLAYER_TILE
-                JSR EAT_PILL
                 JSR PRINT_DEBUG
                 JSR WAIT_BLANK
-                JMP _LOOP               ; Loops forever
+                JSR HANDLE_INPUT
+                JSR EAT_PILL
+                JSR COMPUTE_PACMAN_FRAME
+                JMP _LOOP               ; Game loop
 
 ; SUBROUTUNE WAIT BLANK
 WAIT_BLANK
@@ -69,16 +76,30 @@ INIT_INPUT
 ; copy sprite data and init sprite banks: 4 ghosts and one pacman
 INIT_SPRITES
                 LDX #0                  ; Copy sprite data into video memory
-_COPYSPRT       LDA SPRITEDATA,X
+_COPYSPRT0      LDA SPRITEDATA0,X
                 STA $A400,X             ; sprite pixel data location. Page 327 and 535 
                 INX
-                CPX #(64*2)             ; copy data for 2 sprites 
-                BNE _COPYSPRT
+                CPX #255              ; copy data for 4 sprite frames 
+                BNE _COPYSPRT0
+
+                LDX #0                  
+_COPYSPRT1      LDA SPRITEDATA1,X
+                STA $A500,X             ; + $100  
+                INX
+                CPX #255              ; copy data for 4 sprite frames 
+                BNE _COPYSPRT1
+
+                LDX #0                  
+_COPYSPRT2      LDA SPRITEDATA2,X
+                STA $A600,X             ; + $100  
+                INX
+                CPX #127              ; copy data for 2 sprite frames 
+                BNE _COPYSPRT2
                 
                 LDA #$00                ; Sprite bank 0, black as common sprite color 
                 STA VID_SPRC            ; VID_SPRC=$D006 (see codyconstants.asm)
                 
-                LDA #$10                ; ($A400-$A000)/$40=$10 see Page 327 for explaination
+                LDA #$19                ; ($A400-$A000)/$FF=$13 see Page 327 for explaination
                 STA SPR0_PTR            ; SPR0_PTR=$D083 (see codyconstants.asm)
                 LDA #$12                ; red=2 color 1, white=1 color 2 
                 STA SPR0_COL            ; SPR0_COL=$D082 (see codyconstants.asm)
@@ -87,7 +108,7 @@ _COPYSPRT       LDA SPRITEDATA,X
                 LDA #(21+8)
                 STA SPR0_Y
                 
-                LDA #$10                ; ghost, like above
+                LDA #$19                ; light red ghost, like above
                 STA SPR0_PTR+4          
                 LDA #$1A                ; light red=A color 1, white=1 color 2 
                 STA SPR0_COL+4
@@ -96,7 +117,7 @@ _COPYSPRT       LDA SPRITEDATA,X
                 LDA #(21+32)
                 STA SPR0_Y+4
                 
-                LDA #$10                ; ghost, like above
+                LDA #$19                ; light blue ghost, like above
                 STA SPR0_PTR+8 
                 LDA #$1E                ; light blue=E color 1, white=1 color 2 
                 STA SPR0_COL+8 
@@ -105,7 +126,7 @@ _COPYSPRT       LDA SPRITEDATA,X
                 LDA #(21+32)
                 STA SPR0_Y+8
                 
-                LDA #$10                ; ghost, like above
+                LDA #$19                ; light gray ghost, like above
                 STA SPR0_PTR+12 
                 LDA #$1D                ; lihgt gray=D color 1, white=1 color 2 
                 STA SPR0_COL+12      
@@ -114,7 +135,7 @@ _COPYSPRT       LDA SPRITEDATA,X
                 LDA #(21+40)
                 STA SPR0_Y+12
                 
-                LDA #$11                ; pacman, like above
+                LDA #$10                ; pacman, like above
                 STA SPR0_PTR+16      
                 LDA #$07                ; yellow=7 color 1, black=1 color 2 (not used in sprite)
                 STA SPR0_COL+16      
@@ -192,8 +213,8 @@ PRINT_DEBUG
                 RTS
 
 ; SUBROUTINE COMPUTE TILE
-; Read PacMan Sprite pos (x,y) and Print it in screen memory
-; First visible position: SPRITE_WIDTH= 12,SPRITE_HEIGHT=21 middle of sprite 5,5
+; Save PacMan Sprite pos (x,y)
+; First visible position: SPRITE_WIDTH=12, SPRITE_HEIGHT=21 middle of sprite 5,5
 COMPUTE_PLAYER_TILE
                 LDA SPR0_X+16           ; (X-(12+5)) / 4 pixels
                 SEC
@@ -298,7 +319,8 @@ _ROWS5
                 RTS
 
 ; SUBROUTINE HANLDE INPUT
-; Reads WASD / Joystick Keys and moved PacMan sprite
+; Reads WASD / Joystick Keys and moved PacMan sprite. 
+; Call this at V-Blank
 HANDLE_INPUT
                 LDA #$01                ; Set VIA to read keyboard row 2
                 STA VIA_IORA
@@ -355,31 +377,40 @@ HANDLE_INPUT
                 
                 JMP _INPUT_DONE 
 
-_DOWN
-                LDA SPR0_Y+16
-                INC A
-                STA SPR0_Y+16           ; update value: move pacman down 
-                JMP _INPUT_DONE
 _UP
                 LDA SPR0_Y+16
                 DEC A
-                STA SPR0_Y+16           ; update value: move pacman up 
+                STA SPR0_Y+16           ; update value: move pacman up
+                LDA #%00000001
+                STA PACMAN_DIRECTION 
+                JMP _INPUT_DONE
+_DOWN
+                LDA SPR0_Y+16
+                INC A
+                STA SPR0_Y+16           ; update value: move pacman down
+                LDA #%00000010
+                STA PACMAN_DIRECTION 
                 JMP _INPUT_DONE
 _LEFT
                 LDA SPR0_X+16
                 DEC A
                 STA SPR0_X+16           ; update value: move pacman left 
+                LDA #%00000100
+                STA PACMAN_DIRECTION 
                 JMP _INPUT_DONE
 _RIGHT
                 LDA SPR0_X+16
                 INC A
                 STA SPR0_X+16           ; update value: move pacman right 
+                LDA #%00001000
+                STA PACMAN_DIRECTION 
                 JMP _INPUT_DONE
 _INPUT_DONE
                 RTS
 
 ; SUBROUTINE EAT PILL
 ; Remove pill if PacMan is on "pill tile"
+; Call this at V-Blank
 EAT_PILL
                 ; 0 = empty, 1 = pill
                 ; if tile_number = 1 then
@@ -394,19 +425,107 @@ EAT_PILL
 _END_OF_EAT
                 RTS
 
-; DATA SECTION
-SPRITEDATA
+; SUBROUTINE COMPUTE PACMAN FRAME
+; TODO: refactor this, remove code dupl.
+COMPUTE_PACMAN_FRAME
+                LDA PACMAN_FRAME_NUM
+                CMP #0
+                BEQ _FRAME_0
+                CMP #12
+                BEQ _FRAME_1
+                CMP #24
+                BEQ _FRAME_2
+                JMP _END_OF_FRAME_SELECT
+_FRAME_0
+                LDA #$10                    
+                STA SPR0_PTR+16         ; switch to computed frame numer / sprite graphic index
+                JMP _END_OF_FRAME_SELECT
+_FRAME_1
+                LDX #$11
+                LDA PACMAN_DIRECTION
+                CMP #%00000001
+                BEQ _FRAME_1_UP
+                CMP #%00000010
+                BEQ _FRAME_1_DOWN
+                CMP #%00001000
+                BEQ _FRAME_1_RIGHT
+                ; pacman moves left
+                TXA
+                JMP _SWITCH_FRAME_TO_1  
 
-.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; ghost
+_FRAME_1_UP     ; frame $17
+                TXA
+                CLC
+                ADC #6
+                JMP _SWITCH_FRAME_TO_1
+_FRAME_1_DOWN   ; frame $15
+                TXA
+                CLC
+                ADC #4
+                JMP _SWITCH_FRAME_TO_1
+_FRAME_1_RIGHT  ; frame $13
+                TXA
+                CLC
+                ADC #2
+                JMP _SWITCH_FRAME_TO_1                
+
+_SWITCH_FRAME_TO_1                      ; switch to computed frame numer / sprite graphic index                    
+                STA SPR0_PTR+16                      
+                JMP _END_OF_FRAME_SELECT                          
+_FRAME_2
+                LDX #$12
+                LDA PACMAN_DIRECTION
+                CMP #%00000001
+                BEQ _FRAME_2_UP
+                CMP #%00000010
+                BEQ _FRAME_2_DOWN
+                CMP #%00001000
+                BEQ _FRAME_2_RIGHT
+                ; pacman moves left
+                TXA
+                JMP _SWITCH_FRAME_TO_2  
+
+_FRAME_2_UP     ; frame $18
+                TXA
+                CLC
+                ADC #6
+                JMP _SWITCH_FRAME_TO_2
+_FRAME_2_DOWN   ; frame $16
+                TXA
+                CLC
+                ADC #4
+                JMP _SWITCH_FRAME_TO_2
+_FRAME_2_RIGHT  ; frame $14
+                TXA
+                CLC
+                ADC #2
+                JMP _SWITCH_FRAME_TO_2   
+ _SWITCH_FRAME_TO_2                     ; switch to computed frame numer / sprite graphic index
+                STA SPR0_PTR+16            
+                JMP _END_OF_FRAME_SELECT
+_END_OF_FRAME_SELECT
+                LDA PACMAN_FRAME_NUM    ; next frame num
+                INC A 
+                STA PACMAN_FRAME_NUM
+                CMP #36                 ; reset frame num, if frame max: restart animation
+                BNE _END_OF_ROUTINE
+                STZ PACMAN_FRAME_NUM
+_END_OF_ROUTINE
+                RTS
+
+; DATA SECTION
+SPRITEDATA0
+
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; $10: pacman, circle=(left/right/up/down), 2
 .BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
 .BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
-.BYTE %01_10_10_01, %01_10_10_01, %00_00_00_00
-.BYTE %01_11_10_01, %01_11_10_01, %00_00_00_00
 .BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
 .BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
 .BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
 .BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
-.BYTE %01_01_00_01, %01_00_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
@@ -420,7 +539,30 @@ SPRITEDATA
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00
 
-.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; pacman, left
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; $11: pacman, left, 0
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %00_00_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %00_00_00_01, %01_01_01_01, %00_00_00_00
+.BYTE %00_00_00_00, %01_01_01_01, %00_00_00_00
+.BYTE %00_00_00_00, %01_01_01_01, %00_00_00_00
+.BYTE %00_00_00_01, %01_01_01_01, %00_00_00_00
+.BYTE %00_00_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00
+
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; $12: pacman, left, 1
 .BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
 .BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
 .BYTE %00_01_01_01, %01_01_01_01, %00_00_00_00
@@ -430,6 +572,171 @@ SPRITEDATA
 .BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
 .BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
 .BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00
+
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; $13: pacman, right, 0
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_00_00_00, %00_00_00_00
+.BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00
+.BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_00_00_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00
+
+SPRITEDATA1
+
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; $14: pacman, right, 1
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00
+
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; $15: pacman, down, 0
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_00, %00_01_01_01, %00_00_00_00
+.BYTE %01_01_00_00, %00_00_01_01, %00_00_00_00
+.BYTE %01_00_00_00, %00_00_00_01, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00
+
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; $16: pacman, down, 1
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_00, %00_01_01_01, %00_00_00_00
+.BYTE %01_01_00_00, %00_00_01_01, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00
+
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; $17: pacman, up, 0
+.BYTE %00_01_00_00, %00_00_01_00, %00_00_00_00
+.BYTE %01_01_00_00, %00_00_01_01, %00_00_00_00
+.BYTE %01_01_01_00, %00_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00
+
+SPRITEDATA2
+
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; $18: pacman, up, 1
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %01_00_00_00, %00_00_00_01, %00_00_00_00
+.BYTE %01_01_00_00, %00_00_01_01, %00_00_00_00
+.BYTE %01_01_01_00, %00_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00
+
+.BYTE %00_00_01_01, %01_01_00_00, %00_00_00_00 ; $19: ghost
+.BYTE %00_01_01_01, %01_01_01_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_10_10_01, %01_10_10_01, %00_00_00_00
+.BYTE %01_11_10_01, %01_11_10_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %00_00_00_00
+.BYTE %01_01_00_01, %01_00_01_01, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
@@ -544,7 +851,7 @@ TILE_DATA
   .BYTE %00000000
   .BYTE %00000000
 
-  .BYTE %00000000  ; 11:
+  .BYTE %00000000   ; 11:
   .BYTE %00000000
   .BYTE %00000000
   .BYTE %11111111
