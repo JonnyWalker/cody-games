@@ -426,7 +426,6 @@ _END_OF_EAT
                 RTS
 
 ; SUBROUTINE COMPUTE PACMAN FRAME
-; TODO: refactor this, remove code dupl.
 COMPUTE_PACMAN_FRAME
                 LDA PACMAN_FRAME_NUM
                 CMP #0
@@ -435,79 +434,49 @@ COMPUTE_PACMAN_FRAME
                 BEQ _FRAME_1
                 CMP #24
                 BEQ _FRAME_2
-                JMP _END_OF_FRAME_SELECT
+                JMP _END_OF_FRAME_SELECT    ; no change of frames
 _FRAME_0
                 LDA #$10                    
-                STA SPR0_PTR+16         ; switch to computed frame numer / sprite graphic index
-                JMP _END_OF_FRAME_SELECT
+                JMP _SWITCH_FRAME           ; this frame is the same in all direction (circle graphic)
 _FRAME_1
                 LDX #$11
-                LDA PACMAN_DIRECTION
-                CMP #%00000001
-                BEQ _FRAME_1_UP
-                CMP #%00000010
-                BEQ _FRAME_1_DOWN
-                CMP #%00001000
-                BEQ _FRAME_1_RIGHT
-                ; pacman moves left
-                TXA
-                JMP _SWITCH_FRAME_TO_1  
-
-_FRAME_1_UP     ; frame $17
-                TXA
-                CLC
-                ADC #6
-                JMP _SWITCH_FRAME_TO_1
-_FRAME_1_DOWN   ; frame $15
-                TXA
-                CLC
-                ADC #4
-                JMP _SWITCH_FRAME_TO_1
-_FRAME_1_RIGHT  ; frame $13
-                TXA
-                CLC
-                ADC #2
-                JMP _SWITCH_FRAME_TO_1                
-
-_SWITCH_FRAME_TO_1                      ; switch to computed frame numer / sprite graphic index                    
-                STA SPR0_PTR+16                      
-                JMP _END_OF_FRAME_SELECT                          
+                JMP _COMPUTE_FRAME_OFFSET
 _FRAME_2
                 LDX #$12
+                JMP _COMPUTE_FRAME_OFFSET
+_COMPUTE_FRAME_OFFSET               
                 LDA PACMAN_DIRECTION
                 CMP #%00000001
-                BEQ _FRAME_2_UP
+                BEQ _FRAME_UP
                 CMP #%00000010
-                BEQ _FRAME_2_DOWN
+                BEQ _FRAME_DOWN
                 CMP #%00001000
-                BEQ _FRAME_2_RIGHT
-                ; pacman moves left
+                BEQ _FRAME_RIGHT
+                ; pacman moves left, use x value. no offset 
                 TXA
-                JMP _SWITCH_FRAME_TO_2  
-
-_FRAME_2_UP     ; frame $18
+                JMP _SWITCH_FRAME  
+_FRAME_UP       ; frame number $17, $18
                 TXA
                 CLC
                 ADC #6
-                JMP _SWITCH_FRAME_TO_2
-_FRAME_2_DOWN   ; frame $16
+                JMP _SWITCH_FRAME
+_FRAME_DOWN     ; frame number $15, $16
                 TXA
                 CLC
                 ADC #4
-                JMP _SWITCH_FRAME_TO_2
-_FRAME_2_RIGHT  ; frame $14
+                JMP _SWITCH_FRAME
+_FRAME_RIGHT    ; fame number $13, $14
                 TXA
                 CLC
                 ADC #2
-                JMP _SWITCH_FRAME_TO_2   
- _SWITCH_FRAME_TO_2                     ; switch to computed frame numer / sprite graphic index
-                STA SPR0_PTR+16            
-                JMP _END_OF_FRAME_SELECT
+                JMP _SWITCH_FRAME                                     
+_SWITCH_FRAME
+                STA SPR0_PTR+16         ; switch to computed frame number / sprite graphic index
 _END_OF_FRAME_SELECT
                 LDA PACMAN_FRAME_NUM    ; next frame num
                 INC A 
                 STA PACMAN_FRAME_NUM
-                CMP #36                 ; reset frame num, if frame max: restart animation
+                CMP #36                 ; reset frame num, if frame num max: restart animation
                 BNE _END_OF_ROUTINE
                 STZ PACMAN_FRAME_NUM
 _END_OF_ROUTINE
