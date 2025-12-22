@@ -4,7 +4,9 @@ A Cody Assembly Game for the [Cody Computer](https://www.codycomputer.org/).
 
 # How to Play
 
-Mova PacMan: WASD / Joystick
+Eat all the pills!
+
+Move PacMan: WASD / Joystick
 
 # Screenshot
 ![pacman.png](pacman.png)
@@ -25,5 +27,6 @@ Run the program on the Cody computer using the Prop Plug.
 
 Or put the game on a cartridge.
 
-# TODO:
-- everything
+# TODO/Next:
+- collision with level walls
+- collision with ghosts
