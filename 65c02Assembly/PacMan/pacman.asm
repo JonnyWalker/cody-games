@@ -47,9 +47,9 @@ MAIN                                    ; The program starts running from here
                 LDA #$E7                ; Store shared colors (light blue=14 and yellow=7)
                 STA VID_SCRC            ; VID_SCRC=$D005 (see codyconstants.asm)
 
-                LDA #(12+PACMAN_START_X)  
+                LDA #(PACMAN_START_X)  
                 STA PACMAN_X
-                LDA #(21+PACMAN_START_Y)
+                LDA #(PACMAN_START_Y)
                 STA PACMAN_Y
 
                 JSR LOAD_TILES 
@@ -192,16 +192,15 @@ PRINT_DEBUG
                 ADC #(DIGIT_TILE_START) ; look up digit graphic ...
                 STA $C400, Y            ; and put it at position Y
                 
-                LDY #64                 ; print Tile_Y the same way
-                LDA TILE_Y
+                                
+                LDA TILE_Y              ; print Tile_Y the same way
                 TAX
                 LDA LUT_BinToBCD,X
                 AND #$0F
                 CLC
                 ADC #(DIGIT_TILE_START)
-                STA $C400, Y
+                STA $C400+64
 
-                LDY #63
                 LDA TILE_Y
                 TAX
                 LDA LUT_BinToBCD,X
@@ -211,7 +210,7 @@ PRINT_DEBUG
                 LSR A 
                 CLC
                 ADC #(DIGIT_TILE_START)
-                STA $C400, Y
+                STA $C400+63
 
                 LDY #104                ; print tile number (value)
                 LDA TILE_NUMBER
@@ -234,9 +233,48 @@ PRINT_DEBUG
                 ADC #(DIGIT_TILE_START)
                 STA $C400, Y
 
-                LDA TILE_NUMBER              ; print tile 
-                LDY #144  
+                LDA TILE_NUMBER         ; print tile (the graphic)
+                LDY #184  
                 STA $C400, Y
+
+                LDA PACMAN_X            ; print PACMAN_X the same way
+                TAX
+                LDA LUT_BinToBCD,X
+                AND #$0F
+                CLC
+                ADC #(DIGIT_TILE_START)
+                STA $C400+224
+
+                LDA PACMAN_X
+                TAX
+                LDA LUT_BinToBCD,X
+                LSR A 
+                LSR A 
+                LSR A 
+                LSR A 
+                CLC
+                ADC #(DIGIT_TILE_START)
+                STA $C400+223
+
+                LDA PACMAN_Y            ; print PACMAN_Y the same way
+                TAX
+                LDA LUT_BinToBCD,X
+                AND #$0F
+                CLC
+                ADC #(DIGIT_TILE_START)
+                STA $C400+264
+
+                LDA PACMAN_Y
+                TAX
+                LDA LUT_BinToBCD,X
+                LSR A 
+                LSR A 
+                LSR A 
+                LSR A 
+                CLC
+                ADC #(DIGIT_TILE_START)
+                STA $C400+263
+
 
                 RTS
 
@@ -246,14 +284,14 @@ PRINT_DEBUG
 COMPUTE_PLAYER_TILE
                 LDA ARG16Bit_01         ; (X-12) / 4 pixels
                 SEC
-                SBC #(SPRITE_WIDTH-4)
+                SBC #(SPRITE_WIDTH)
                 LSR 
                 LSR 
                 STA TILE_X
 
                 LDA ARG16Bit_02         ; (X-21) / 8 pixels
                 SEC
-                SBC #(SPRITE_HEIGHT-5)
+                SBC #(SPRITE_HEIGHT)
                 LSR 
                 LSR 
                 LSR
@@ -423,8 +461,6 @@ _INPUT_DONE
 ; SUBROUTINE HANDLE UP
 HANDLE_UP       
                 LDA PACMAN_X
-                SEC
-                SBC #4
                 AND #3
                 BNE _UP_DONE
 
@@ -451,8 +487,6 @@ _UP_DONE
 ; SUBROUTINE HANDLE DOWN
 HANDLE_DOWN
                 LDA PACMAN_X
-                SEC
-                SBC #4
                 AND #3
                 BNE _DOWN_DONE
 
@@ -479,8 +513,6 @@ _DOWN_DONE
 ; SUBROUTINE HANDLE LEFT
 HANDLE_LEFT
                 LDA PACMAN_Y
-                SEC
-                SBC #5
                 AND #7
                 BNE _LEFT_DONE
 
@@ -507,8 +539,6 @@ _LEFT_DONE
 ; SUBROUTINE HANDLE RIGHT
 HANDLE_RIGHT
                 LDA PACMAN_Y
-                SEC
-                SBC #5
                 AND #7
                 BNE _RIGHT_DONE
 
@@ -1105,7 +1135,7 @@ TILE_DATA
   .BYTE %00110011
   .BYTE %00001100
 
-; used to convert from twos-complement to BCD
+; used to convert from twos-complement to BCD (only two digits)
 LUT_BinToBCD
                 .BYTE %00000000
                 .BYTE %00000001
@@ -1157,6 +1187,160 @@ LUT_BinToBCD
                 .BYTE %01000111
                 .BYTE %01001000
                 .BYTE %01001001
+
+                .BYTE %01010000
+                .BYTE %01010001
+                .BYTE %01010010
+                .BYTE %01010011
+                .BYTE %01010100
+                .BYTE %01010101
+                .BYTE %01010110
+                .BYTE %01010111
+                .BYTE %01011000
+                .BYTE %01011001
+                .BYTE %01100000
+                .BYTE %01100001
+                .BYTE %01100010
+                .BYTE %01100011
+                .BYTE %01100100
+                .BYTE %01100101
+                .BYTE %01100110
+                .BYTE %01100111
+                .BYTE %01101000
+                .BYTE %01101001
+                .BYTE %01110000
+                .BYTE %01110001
+                .BYTE %01110010
+                .BYTE %01110011
+                .BYTE %01110100
+                .BYTE %01110101
+                .BYTE %01110110
+                .BYTE %01110111
+                .BYTE %01111000
+                .BYTE %01111001
+                .BYTE %10000000
+                .BYTE %10000001
+                .BYTE %10000010
+                .BYTE %10000011
+                .BYTE %10000100
+                .BYTE %10000101
+                .BYTE %10000110
+                .BYTE %10000111
+                .BYTE %10001000
+                .BYTE %10001001
+                .BYTE %10010000
+                .BYTE %10010001
+                .BYTE %10010010
+                .BYTE %10010011
+                .BYTE %10010100
+                .BYTE %10010101
+                .BYTE %10010110
+                .BYTE %10010111
+                .BYTE %10011000
+                .BYTE %10011001
+
+                .BYTE %00000000
+                .BYTE %00000001
+                .BYTE %00000010
+                .BYTE %00000011
+                .BYTE %00000100
+                .BYTE %00000101
+                .BYTE %00000110
+                .BYTE %00000111
+                .BYTE %00001000
+                .BYTE %00001001
+                .BYTE %00010000
+                .BYTE %00010001
+                .BYTE %00010010
+                .BYTE %00010011
+                .BYTE %00010100
+                .BYTE %00010101
+                .BYTE %00010110
+                .BYTE %00010111
+                .BYTE %00011000
+                .BYTE %00011001
+                .BYTE %00100000
+                .BYTE %00100001
+                .BYTE %00100010
+                .BYTE %00100011
+                .BYTE %00100100
+                .BYTE %00100101
+                .BYTE %00100110
+                .BYTE %00100111
+                .BYTE %00101000
+                .BYTE %00101001
+                .BYTE %00110000
+                .BYTE %00110001
+                .BYTE %00110010
+                .BYTE %00110011
+                .BYTE %00110100
+                .BYTE %00110101
+                .BYTE %00110110
+                .BYTE %00110111
+                .BYTE %00111000
+                .BYTE %00111001
+                .BYTE %01000000
+                .BYTE %01000001
+                .BYTE %01000010
+                .BYTE %01000011
+                .BYTE %01000100
+                .BYTE %01000101
+                .BYTE %01000110
+                .BYTE %01000111
+                .BYTE %01001000
+                .BYTE %01001001
+
+                .BYTE %01010000
+                .BYTE %01010001
+                .BYTE %01010010
+                .BYTE %01010011
+                .BYTE %01010100
+                .BYTE %01010101
+                .BYTE %01010110
+                .BYTE %01010111
+                .BYTE %01011000
+                .BYTE %01011001
+                .BYTE %01100000
+                .BYTE %01100001
+                .BYTE %01100010
+                .BYTE %01100011
+                .BYTE %01100100
+                .BYTE %01100101
+                .BYTE %01100110
+                .BYTE %01100111
+                .BYTE %01101000
+                .BYTE %01101001
+                .BYTE %01110000
+                .BYTE %01110001
+                .BYTE %01110010
+                .BYTE %01110011
+                .BYTE %01110100
+                .BYTE %01110101
+                .BYTE %01110110
+                .BYTE %01110111
+                .BYTE %01111000
+                .BYTE %01111001
+                .BYTE %10000000
+                .BYTE %10000001
+                .BYTE %10000010
+                .BYTE %10000011
+                .BYTE %10000100
+                .BYTE %10000101
+                .BYTE %10000110
+                .BYTE %10000111
+                .BYTE %10001000
+                .BYTE %10001001
+                .BYTE %10010000
+                .BYTE %10010001
+                .BYTE %10010010
+                .BYTE %10010011
+                .BYTE %10010100
+                .BYTE %10010101
+                .BYTE %10010110
+                .BYTE %10010111
+                .BYTE %10011000
+                .BYTE %10011001
+
 
 MAP_DATA
   .BYTE 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 9, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
