@@ -8,6 +8,12 @@ TILE_NUM         = 28                   ; number of tiles
 DIGIT_TILE_START = 18                   ; start of tiles 0 .. 9 in tile data
 SPRITE_WIDTH     = 12
 SPRITE_HEIGHT    = 21
+TILE_WIDTH       = 4
+TILE_HEIGHT      = 8
+PACMAN_START_X   = TILE_WIDTH*10        ; start at tile (10, 18)
+PACMAN_START_Y   = TILE_HEIGHT*18       ; 
+PACMAN_WITDH     = 8
+PACMAN_HEIGHT    = 10
 
 ; Game state
 TILE_X           = $A0                  ; current x tile pos of pacman
@@ -15,7 +21,12 @@ TILE_Y           = $A1                  ; current y tile pos of pacman
 TILE_INDEX       = $A2                  ; index of the current tile (computed by tile x, y)
 TILE_NUMBER      = $A4                  ; number of the current tile (computed by tile x, y)
 PACMAN_FRAME_NUM = $A5                  ; current frame number, used for animation
-PACMAN_DIRECTION = $A6
+PACMAN_DIRECTION = $A6                  ; Bits: XXXX RLDU
+TEMP             = $A7
+ARG16Bit_01      = $A8
+ARG16Bit_02      = $AA
+PACMAN_X         = $AC                  ; separate game state and drawing of pac man
+PACMAN_Y         = $AD
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -35,17 +46,29 @@ MAIN                                    ; The program starts running from here
                 
                 LDA #$E7                ; Store shared colors (light blue=14 and yellow=7)
                 STA VID_SCRC            ; VID_SCRC=$D005 (see codyconstants.asm)
-                
+
+                LDA #(12+PACMAN_START_X)  
+                STA PACMAN_X
+                LDA #(21+PACMAN_START_Y)
+                STA PACMAN_Y
+
                 JSR LOAD_TILES 
                 JSR INIT_INPUT
                 JSR INIT_SPRITES
-                
-                STZ TILE_X 
+
+
+
+                STZ TILE_X              ; init game state
                 STZ TILE_Y
                 STZ PACMAN_FRAME_NUM
-                ; TODO PACMAN_DIRECTION
+                LDA #%00000100
+                STA PACMAN_DIRECTION 
 
 _LOOP       
+                LDA PACMAN_X
+                STA ARG16Bit_01         ; only use 8 Bit
+                LDA PACMAN_Y
+                STA ARG16Bit_02
                 JSR COMPUTE_PLAYER_TILE
                 JSR READ_PLAYER_TILE
                 JSR PRINT_DEBUG
@@ -53,6 +76,7 @@ _LOOP
                 JSR HANDLE_INPUT
                 JSR EAT_PILL
                 JSR COMPUTE_PACMAN_FRAME
+                JSR UPDATE_PACMAN
                 JMP _LOOP               ; Game loop
 
 ; SUBROUTUNE WAIT BLANK
@@ -79,27 +103,27 @@ INIT_SPRITES
 _COPYSPRT0      LDA SPRITEDATA0,X
                 STA $A400,X             ; sprite pixel data location. Page 327 and 535 
                 INX
-                CPX #255              ; copy data for 4 sprite frames 
+                CPX #255              ; copy data for 4 sprite frames of 64 Byte
                 BNE _COPYSPRT0
 
                 LDX #0                  
 _COPYSPRT1      LDA SPRITEDATA1,X
                 STA $A500,X             ; + $100  
                 INX
-                CPX #255              ; copy data for 4 sprite frames 
+                CPX #255              ; copy data for 4 sprite frames of 64 Byte
                 BNE _COPYSPRT1
 
                 LDX #0                  
 _COPYSPRT2      LDA SPRITEDATA2,X
                 STA $A600,X             ; + $100  
                 INX
-                CPX #127              ; copy data for 2 sprite frames 
+                CPX #127              ; copy data for 2 sprite frames of 64 Byte
                 BNE _COPYSPRT2
                 
                 LDA #$00                ; Sprite bank 0, black as common sprite color 
                 STA VID_SPRC            ; VID_SPRC=$D006 (see codyconstants.asm)
                 
-                LDA #$19                ; ($A400-$A000)/$FF=$13 see Page 327 for explaination
+                LDA #$19                ; ($A400-$A000)/$FF*SpriteIndex=$19 see Page 327 for explaination
                 STA SPR0_PTR            ; SPR0_PTR=$D083 (see codyconstants.asm)
                 LDA #$12                ; red=2 color 1, white=1 color 2 
                 STA SPR0_COL            ; SPR0_COL=$D082 (see codyconstants.asm)
@@ -139,9 +163,9 @@ _COPYSPRT2      LDA SPRITEDATA2,X
                 STA SPR0_PTR+16      
                 LDA #$07                ; yellow=7 color 1, black=1 color 2 (not used in sprite)
                 STA SPR0_COL+16      
-                LDA #(12+64)         
+                LDA PACMAN_X         
                 STA SPR0_X+16       
-                LDA #(21+96)
+                LDA PACMAN_Y
                 STA SPR0_Y+16
                 RTS
 
@@ -210,20 +234,24 @@ PRINT_DEBUG
                 ADC #(DIGIT_TILE_START)
                 STA $C400, Y
 
+                LDA TILE_NUMBER              ; print tile 
+                LDY #144  
+                STA $C400, Y
+
                 RTS
 
 ; SUBROUTINE COMPUTE TILE
 ; Save PacMan Sprite pos (x,y)
-; First visible position: SPRITE_WIDTH=12, SPRITE_HEIGHT=21 middle of sprite 5,5
+; First visible position: SPRITE_WIDTH=12, SPRITE_HEIGHT=21 
 COMPUTE_PLAYER_TILE
-                LDA SPR0_X+16           ; (X-(12+5)) / 4 pixels
+                LDA ARG16Bit_01         ; (X-12) / 4 pixels
                 SEC
-                SBC #(SPRITE_WIDTH-5)
+                SBC #(SPRITE_WIDTH-4)
                 LSR 
                 LSR 
                 STA TILE_X
 
-                LDA SPR0_Y+16           ; (X-(21+5)) / 8 pixels
+                LDA ARG16Bit_02         ; (X-21) / 8 pixels
                 SEC
                 SBC #(SPRITE_HEIGHT-5)
                 LSR 
@@ -376,36 +404,132 @@ HANDLE_INPUT
                 BEQ _UP
                 
                 JMP _INPUT_DONE 
-
+                                        ; avoid branch limit by using subs
 _UP
-                LDA SPR0_Y+16
-                DEC A
-                STA SPR0_Y+16           ; update value: move pacman up
-                LDA #%00000001
-                STA PACMAN_DIRECTION 
+                JSR HANDLE_UP
                 JMP _INPUT_DONE
 _DOWN
-                LDA SPR0_Y+16
-                INC A
-                STA SPR0_Y+16           ; update value: move pacman down
-                LDA #%00000010
-                STA PACMAN_DIRECTION 
+                JSR HANDLE_DOWN
                 JMP _INPUT_DONE
 _LEFT
-                LDA SPR0_X+16
-                DEC A
-                STA SPR0_X+16           ; update value: move pacman left 
-                LDA #%00000100
-                STA PACMAN_DIRECTION 
+                JSR HANDLE_LEFT
                 JMP _INPUT_DONE
 _RIGHT
-                LDA SPR0_X+16
-                INC A
-                STA SPR0_X+16           ; update value: move pacman right 
-                LDA #%00001000
-                STA PACMAN_DIRECTION 
+                JSR HANDLE_RIGHT
                 JMP _INPUT_DONE
 _INPUT_DONE
+                RTS
+
+; SUBROUTINE HANDLE UP
+HANDLE_UP       
+                LDA PACMAN_X
+                SEC
+                SBC #4
+                AND #3
+                BNE _UP_DONE
+
+                LDA PACMAN_X            ; skip movement if move on a level tile (numer>=3)
+                STA ARG16Bit_01        
+                LDA PACMAN_Y
+                DEC A
+                STA ARG16Bit_02
+                JSR COMPUTE_PLAYER_TILE
+                JSR READ_PLAYER_TILE
+                LDA TILE_NUMBER
+                SEC 
+                SBC #3
+                BPL _UP_DONE            ; no update
+
+                LDA PACMAN_Y
+                DEC A
+                STA PACMAN_Y            ; update value: move pacman down
+                LDA #%00000001
+                STA PACMAN_DIRECTION 
+_UP_DONE
+                RTS
+
+; SUBROUTINE HANDLE DOWN
+HANDLE_DOWN
+                LDA PACMAN_X
+                SEC
+                SBC #4
+                AND #3
+                BNE _DOWN_DONE
+
+                LDA PACMAN_X            ; skip movement if move on a level tile (numer>=3)
+                STA ARG16Bit_01        
+                LDA PACMAN_Y
+                INC A
+                STA ARG16Bit_02
+                JSR COMPUTE_PLAYER_TILE
+                JSR READ_PLAYER_TILE
+                LDA TILE_NUMBER
+                SEC 
+                SBC #3
+                BPL _DOWN_DONE          ; no update
+
+                LDA PACMAN_Y
+                INC A
+                STA PACMAN_Y           ; update value: move pacman down
+                LDA #%00000010
+                STA PACMAN_DIRECTION
+_DOWN_DONE
+                RTS
+
+; SUBROUTINE HANDLE LEFT
+HANDLE_LEFT
+                LDA PACMAN_Y
+                SEC
+                SBC #5
+                AND #7
+                BNE _LEFT_DONE
+
+                LDA PACMAN_X            ; skip movement if move on a level tile (numer>=3)
+                DEC A
+                STA ARG16Bit_01        
+                LDA PACMAN_Y
+                STA ARG16Bit_02
+                JSR COMPUTE_PLAYER_TILE
+                JSR READ_PLAYER_TILE
+                LDA TILE_NUMBER
+                SEC 
+                SBC #3
+                BPL _LEFT_DONE          ; no update
+
+                LDA PACMAN_X
+                DEC A
+                STA PACMAN_X            ; update value: move pacman left 
+                LDA #%00000100
+                STA PACMAN_DIRECTION
+_LEFT_DONE
+                RTS
+
+; SUBROUTINE HANDLE RIGHT
+HANDLE_RIGHT
+                LDA PACMAN_Y
+                SEC
+                SBC #5
+                AND #7
+                BNE _RIGHT_DONE
+
+                LDA PACMAN_X            ; skip movement if move on a level tile (numer>=3)
+                INC A
+                STA ARG16Bit_01        
+                LDA PACMAN_Y
+                STA ARG16Bit_02
+                JSR COMPUTE_PLAYER_TILE
+                JSR READ_PLAYER_TILE
+                LDA TILE_NUMBER
+                SEC 
+                SBC #3
+                BPL _RIGHT_DONE         ; no update
+
+                LDA PACMAN_X
+                INC A
+                STA PACMAN_X            ; update value: move pacman right 
+                LDA #%00001000
+                STA PACMAN_DIRECTION
+_RIGHT_DONE
                 RTS
 
 ; SUBROUTINE EAT PILL
@@ -465,7 +589,7 @@ _FRAME_DOWN     ; frame number $15, $16
                 CLC
                 ADC #4
                 JMP _SWITCH_FRAME
-_FRAME_RIGHT    ; fame number $13, $14
+_FRAME_RIGHT    ; frame number $13, $14
                 TXA
                 CLC
                 ADC #2
@@ -480,6 +604,14 @@ _END_OF_FRAME_SELECT
                 BNE _END_OF_ROUTINE
                 STZ PACMAN_FRAME_NUM
 _END_OF_ROUTINE
+                RTS
+
+; SUBROUTINE UPDATE PACMAN
+UPDATE_PACMAN
+                LDA PACMAN_X
+                STA SPR0_X+16
+                LDA PACMAN_Y
+                STA SPR0_Y+16
                 RTS
 
 ; DATA SECTION
