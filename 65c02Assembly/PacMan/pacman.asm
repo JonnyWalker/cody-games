@@ -467,7 +467,9 @@ HANDLE_UP
                 LDA PACMAN_X            ; skip movement if move on a level tile (numer>=3)
                 STA ARG16Bit_01        
                 LDA PACMAN_Y
-                DEC A
+                ; DEC A
+                SEC
+                SBC #4
                 STA ARG16Bit_02
                 JSR COMPUTE_PLAYER_TILE
                 JSR READ_PLAYER_TILE
@@ -493,7 +495,8 @@ HANDLE_DOWN
                 LDA PACMAN_X            ; skip movement if move on a level tile (numer>=3)
                 STA ARG16Bit_01        
                 LDA PACMAN_Y
-                INC A
+                CLC
+                ADC #5
                 STA ARG16Bit_02
                 JSR COMPUTE_PLAYER_TILE
                 JSR READ_PLAYER_TILE
@@ -543,7 +546,8 @@ HANDLE_RIGHT
                 BNE _RIGHT_DONE
 
                 LDA PACMAN_X            ; skip movement if move on a level tile (numer>=3)
-                INC A
+                CLC
+                ADC #4
                 STA ARG16Bit_01        
                 LDA PACMAN_Y
                 STA ARG16Bit_02
@@ -639,8 +643,13 @@ _END_OF_ROUTINE
 ; SUBROUTINE UPDATE PACMAN
 UPDATE_PACMAN
                 LDA PACMAN_X
+                DEC A
+                DEC A
                 STA SPR0_X+16
                 LDA PACMAN_Y
+                DEC A
+                DEC A
+                DEC A
                 STA SPR0_Y+16
                 RTS
 
