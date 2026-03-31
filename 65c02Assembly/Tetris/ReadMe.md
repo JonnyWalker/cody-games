@@ -7,7 +7,7 @@ A Cody Assembly Game for the [Cody Computer](https://www.codycomputer.org/).
 TODO
 
 # Screenshot
-TODO
+![tetris.png](tetris.png)
 
 # Author
 
