@@ -26,6 +26,39 @@ MAIN                            ; The program starts running from here
             LDA #$E2            ; Store shared colors (light blue=14 and red=2)
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
+; set characters from $C400 to $C500 to empty tile
+            LDX #0              
+_EMPTY0
+            STZ $C400,X
+            INX
+            BNE _EMPTY0
+; set characters from $C500 to $C600 to empty tile
+            LDX #0              
+_EMPTY1
+            STZ $C500,X
+            INX
+            BNE _EMPTY1
+
+; set characters from $C600 to $C700 to empty tile
+            LDX #0              
+_EMPTY2
+            STZ $C600,X
+            INX
+            BNE _EMPTY2
+; set characters from $C700 to $C800 to empty tile
+            LDX #0              
+_EMPTY3
+            STZ $C700,X
+            INX
+            BNE _EMPTY3
+
+            LDX #0              ; Copy character
+_COPYCHAR   LDA CHARDATA,X
+            STA $C800,X
+            INX
+            CPX #8              ; copy 8 Bytes
+            BNE _COPYCHAR
+    
             LDX #0              ; Copy sprite data into video memory
 _COPYSPRT   LDA SPRITEDATA,X
             STA $A400,X         ; sprite pixel data location. Page 327 and 535 
@@ -86,9 +119,6 @@ _COPYCOLOR3 LDA #$05            ; forground color (0=black) backgrund color (5=g
             CPX #20
             BNE _XLOOP
 
-;
-; start of solution
-;
             LDX #0              ; Change tile color 
 _XLOOP2
             LDY #0              
@@ -109,14 +139,6 @@ _COPYCOLOR4 LDA #$0C            ; forground color (0=black) backgrund color (5=g
             INX                 ; check end of outer loop (5 rows)
             CPX #5
             BNE _XLOOP2 
-
-            LDX #0              ; Copy character
-_COPYCHAR   LDA CHARDATA,X
-            STA $C800,X
-            INX
-            CPX #72             ; 9*8=40
-            BNE _COPYCHAR
-
 
             LDA #$72            ; Store shared colors (light blue=14 and red=2)
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
