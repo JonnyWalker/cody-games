@@ -80,3 +80,6 @@ E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
 - Exercise: add more sprite like in the screenshot below [09_solution.asm](./09_solution.asm)
 
 ![solution08.png](solution09.png)
+
+# 10 Collision
+- Example: jet turns red after a collision with the fuel sprite [10_collision.asm](./10_collision.asm)
