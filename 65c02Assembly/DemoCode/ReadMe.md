@@ -79,7 +79,10 @@ E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
 - Example: combines all examples to a level with a moving sprite [09_level_with_sprite.asm](./09_level_with_sprite.asm)
 - Exercise: add more sprite like in the screenshot below [09_solution.asm](./09_solution.asm)
 
-![solution08.png](solution09.png)
+![solution09.png](solution09.png)
 
 # 10 Collision
 - Example: jet turns red after a collision with the fuel sprite [10_collision.asm](./10_collision.asm)
+- Exercise: add collision checks for all 5 sprites [10_solution.asm](./10_solution.asm)
+
+![solution10.png](solution10.png)

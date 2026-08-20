@@ -304,9 +304,9 @@ _DRAW
 
 ; 3=fuel, 4=heli, 5=plane, 6=ship, 7=ship
 ARR_ENEMY_WIDTH
-  .BYTE 5, 8, 9, 11, 11, 11
+  .BYTE 5, 8, 9, 11, 11
 ARR_ENEMY_HEIGHT
-  .BYTE 19, 6, 5, 5, 10, 10
+  .BYTE 19, 6, 5, 5, 5
 
 CHECK_COLLISION
     LDX #12
@@ -347,7 +347,7 @@ _NO_COLLISION
     INX
     INY
     CPY #5
-    BNE _COLLISION_LOOP ; check next sprite (6 sprite total)
+    BNE _COLLISION_LOOP ; check next sprite (5 sprite total)
 
     LDA #$47            ; change color to yellow (=7)
     STA SPR0_COL 
