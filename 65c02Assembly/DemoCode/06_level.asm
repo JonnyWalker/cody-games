@@ -50,11 +50,11 @@ _EMPTY3
             INX
             BNE _EMPTY3
 
-            LDX #0              ; Copy character
+            LDX #0              ; Copy character pixels
 _COPYCHAR   LDA CHARDATA,X
             STA $C800,X
             INX
-            CPX #8              ; copy 8 Bytes
+            CPX #48             ; copy 8*6 Bytes
             BNE _COPYCHAR
 
             LDA #$00            ; set color pointer to $D800
@@ -91,13 +91,27 @@ _COPYCOLOR3 LDA #$05            ; forground color (0=black) backgrund color (5=g
 
             INX                 ; check end of outer loop (25 rows)
             CPX #25
-            BNE _XLOOP  
+            BNE _XLOOP
+
+            LDA #$7F            ; Store shared colors (yellow=7 and light gray=15)
+            STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
+
+            LDA #1              ; house 0
+            STA $C569
+            LDA #2              ; house 1
+            STA $C56A
+            LDA #3              ; house 2
+            STA $C56B
+            LDA #4              ; house 3
+            STA $C56C
+            LDA #5              ; house 4
+            STA $C56D
 
 _DONE       JMP _DONE           ; Loops forever
 
 CHARDATA
 
-  .BYTE %00000000   ; "empty tile"
+  .BYTE %00000000 ; "empty tile"
   .BYTE %00000000
   .BYTE %00000000
   .BYTE %00000000
@@ -105,6 +119,52 @@ CHARDATA
   .BYTE %00000000
   .BYTE %00000000
   .BYTE %00000000
+
+  .BYTE %00000000 ; house tile 0
+  .BYTE %00000001
+  .BYTE %01010101
+  .BYTE %10101010
+  .BYTE %10101000
+  .BYTE %10101000
+  .BYTE %10101010
+  .BYTE %00000000
+
+  .Byte %00010101 ; hosue tile 1
+  .Byte %01010101
+  .Byte %01010101
+  .Byte %10101010
+  .Byte %00101010
+  .Byte %00101010
+  .Byte %10101010
+  .Byte %00000000
+
+  .Byte %01010101 ; house tile 2
+  .Byte %01010101
+  .Byte %01010101
+  .Byte %10101010
+  .Byte %00001010
+  .Byte %00001010
+  .Byte %10101010
+  .Byte %00000000
+
+  .BYTE %01000000 ; house tile 3
+  .BYTE %01010100 
+  .BYTE %01010101 
+  .BYTE %10101010 
+  .BYTE %10000010 
+  .BYTE %10000010 
+  .BYTE %10101010 
+  .Byte %00000000
+
+  .Byte %00000000 ; house tile 4
+  .Byte %00000000
+  .Byte %01010000
+  .Byte %10100000
+  .Byte %10100000
+  .Byte %10100000
+  .Byte %10100000
+  .Byte %00000000
+
 
 LAST                            ; End of the entire program
 
