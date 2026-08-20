@@ -91,7 +91,7 @@ _COPYCOLOR3 LDA #$05            ; forground color (0=black) backgrund color (5=g
             STA COLORPTR+1
 
             INX                 ; check end of outer loop (25 rows)
-            CPX #25
+            CPX #20
             BNE _XLOOP
 
             LDA #$7F            ; Store shared colors (yellow=7 and light gray=15)
