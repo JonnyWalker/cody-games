@@ -1,4 +1,4 @@
-; livel with 8 sprites
+; level with 6 sprites
 
 .include "codyconstants.asm"
 
@@ -59,6 +59,7 @@ _COPYCHAR   LDA CHARDATA,X
             CPX #144          ; copy 18*8 Bytes
             BNE _COPYCHAR
 
+; start of solution
             LDX #0              ; Copy sprite data into video memory (4 sprites of 64 byte)
 _COPYSPRT   LDA SPRITEDATA,X
             STA $A400,X         ; sprite pixel data location. Page 327 and 535 
@@ -72,6 +73,9 @@ _COPYSPRT2  LDA SPRITEDATA2,X
             INX
             CPX #255
             BNE _COPYSPRT2
+
+
+; end of solution
             
             LDA #$0F            ; Sprite bank 0, light gray as common sprite color 
             STA VID_SPRC        ; VID_SPRC=$D006 (see codyconstants.asm)
@@ -79,6 +83,8 @@ _COPYSPRT2  LDA SPRITEDATA2,X
             STA SPR0_COL        ; SPR0_COL=$D082 (see codyconstants.asm)
             LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
             STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)
+
+; start of solution
 
             LDA #$40            ; black=0 color 1, red=4 color 2 (not uesed)
             STA SPR0_COL+4      ; 
@@ -131,7 +137,7 @@ _COPYSPRT2  LDA SPRITEDATA2,X
             STA SPR0_PTR+24     ;  
             LDA #110          ; 
             STA SPR0_X+24       ; 
-            LDA #100          ; 
+            LDA #100             ; 
             STA SPR0_Y+24       ;
 
             LDA #$6A            ; light red=A color 1, blue=6 color 2
@@ -142,6 +148,8 @@ _COPYSPRT2  LDA SPRITEDATA2,X
             STA SPR0_X+28       ; 
             LDA #130          ; 
             STA SPR0_Y+28       ;   
+
+; end of solution
 
             LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)     
             STA VIA_DDRA
@@ -292,7 +300,6 @@ _DOWN       INC SPRITEY         ; SPRITEY++
 _UP         DEC SPRITEY         ; SPRITEY--
             JMP _DRAW
 _DRAW
-            JSR CHECK_COLLISION
             JSR WAITBLANK       ; Wait for the next frame
 
             LDA SPRITEX         ; sprite X
@@ -302,43 +309,6 @@ _DRAW
 
             JMP _LOOP           ; Game loops 
 
-CHECK_COLLISION
-    ; Check if fuel is too far left
-    CLC
-    LDA SPR0_X        
-    SBC SPR0_X+12     ; jet_x - fuel_x
-    CMP #5            ; fuel width-1
-    BPL _NO_COLLISION
-
-    ; Check if fuel is too far right
-    CLC
-    LDA SPR0_X+12
-    SBC SPR0_X        ; fuel_x - jet_x
-    CMP #6            ; jet width-1
-    BPL _NO_COLLISION 
-
-    ; Check if fuel is too far up
-    CLC
-    LDA SPR0_Y
-    SBC SPR0_Y+12     ; jet_y - fuel_y
-    CMP #19           ; fuel height-1
-    BPL _NO_COLLISION
-
-    ; Check if fuel is too far down
-    CLC
-    LDA SPR0_Y+12
-    SBC SPR0_Y        ; fuel_y - jet_y
-    CMP #13           ; jet height-1 
-    BPL _NO_COLLISION
-    JMP _COLLISION_DETECTED
-_NO_COLLISION
-    LDA #$47            ; change color to yellow (=7)
-    STA SPR0_COL 
-    RTS
-_COLLISION_DETECTED
-    LDA #$74            ; change color to red (=4)
-    STA SPR0_COL 
-    RTS
 
 WAITBLANK
 

@@ -1,4 +1,4 @@
-; livel with 8 sprites
+; collision between jet and fuel
 
 .include "codyconstants.asm"
 
