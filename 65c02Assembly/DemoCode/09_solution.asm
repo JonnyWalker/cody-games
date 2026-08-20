@@ -56,7 +56,7 @@ _EMPTY3
 _COPYCHAR   LDA CHARDATA,X
             STA $C800,X
             INX
-            CPX #8              ; copy 8 Bytes
+            CPX #144          ; copy 18*8 Bytes
             BNE _COPYCHAR
 
 ; start of solution
@@ -86,69 +86,68 @@ _COPYSPRT2  LDA SPRITEDATA2,X
 
 ; start of solution
 
-            LDA #$40            ; black=0 color 1, red=4 color 2
+            LDA #$40            ; black=0 color 1, red=4 color 2 (not uesed)
             STA SPR0_COL+4      ; 
-            LDA #$11            ; sprite data 1 (house left)
+            LDA #$11            ; sprite data 1 (explode)
             STA SPR0_PTR+4      ;  
-            LDA #12             ; 
+            LDA #0              ; invisible
             STA SPR0_X+4        ; 
-            LDA #60             ; 
+            LDA #0              ; invisible
             STA SPR0_Y+4        ; 
-
-            LDA #$40            ; black=0 color 1, red=4 color 2 (not uesed)
-            STA SPR0_COL+8      ; 
-            LDA #$12            ; sprite data 2 (house right)
-            STA SPR0_PTR+8      ;  
-            LDA #24             ; 
-            STA SPR0_X+8        ; 
-            LDA #60             ; 
-            STA SPR0_Y+8        ;
-
-            LDA #$40            ; black=0 color 1, red=4 color 2 (not uesed)
-            STA SPR0_COL+12     ; 
-            LDA #$13            ; sprite data 3 (explode)
-            STA SPR0_PTR+12     ;  
-            LDA #0              ; invisible
-            STA SPR0_X+12       ; 
-            LDA #0              ; invisible
-            STA SPR0_Y+12       ; 
  
-
             LDA #$47            ; black=0 color 1 (unused), yellow=7 color 2
-            STA SPR0_COL+16     ; 
-            LDA #$14            ; sprite data 4 (fire)
-            STA SPR0_PTR+16     ;  
+            STA SPR0_COL+8     ; 
+            LDA #$12            ; sprite data 2 (fire bullet)
+            STA SPR0_PTR+8     ;  
             LDA #0              ; invisible
-            STA SPR0_X+16       ; 
+            STA SPR0_X+8       ; 
             LDA #0              ; invisible 
-            STA SPR0_Y+16       ; 
+            STA SPR0_Y+8       ; 
+
+            LDA #$6A            ; light red=A color 1, blue=6 color 2
+            STA SPR0_COL+12     ; 
+            LDA #$13            ; sprite data 3 (fuel)
+            STA SPR0_PTR+12     ;  
+            LDA #60             ; 
+            STA SPR0_X+12       ; 
+            LDA #60             ; 
+            STA SPR0_Y+12       ;
+
+            LDA #$6C            ; gray=C color 1, blue=6 color 2
+            STA SPR0_COL+16     ; 
+            LDA #$14            ; sprite data 4 (heli)
+            STA SPR0_PTR+16     ;  
+            LDA #80             ; 
+            STA SPR0_X+16       ; 
+            LDA #80             ; 
+            STA SPR0_Y+16       ;
 
             LDA #$6A            ; light red=A color 1, blue=6 color 2
             STA SPR0_COL+20     ; 
-            LDA #$15            ; sprite data 5 (fuel)
+            LDA #$15            ; sprite data 5 (plane)
             STA SPR0_PTR+20     ;  
-            LDA #60             ; 
+            LDA #100          ; 
             STA SPR0_X+20       ; 
-            LDA #60             ; 
-            STA SPR0_Y+20       ;
+            LDA #40             ; 
+            STA SPR0_Y+20       ;  
 
-            LDA #$6C            ; gray=C color 1, blue=6 color 2
+            LDA #$6A            ; light red=A color 1, blue=6 color 2
             STA SPR0_COL+24     ; 
-            LDA #$16            ; sprite data 6 (heli)
+            LDA #$16            ; sprite data 6 (ship)
             STA SPR0_PTR+24     ;  
-            LDA #80             ; 
+            LDA #110          ; 
             STA SPR0_X+24       ; 
-            LDA #80             ; 
+            LDA #100             ; 
             STA SPR0_Y+24       ;
 
             LDA #$6A            ; light red=A color 1, blue=6 color 2
             STA SPR0_COL+28     ; 
-            LDA #$17            ; sprite data 7 (plane)
+            LDA #$16            ; sprite data 6 (ship)
             STA SPR0_PTR+28     ;  
-            LDA #100          ; 
+            LDA #60             ; 
             STA SPR0_X+28       ; 
-            LDA #40             ; 
-            STA SPR0_Y+28       ;  
+            LDA #130          ; 
+            STA SPR0_Y+28       ;   
 
 ; end of solution
 
@@ -198,6 +197,20 @@ _COPYCOLOR3 LDA #$05            ; forground color (0=black) backgrund color (5=g
             CPX #20
             BNE _XLOOP
 
+            LDA #$7F            ; Store shared colors (yellow=7 and light gray=15)
+            STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
+
+            LDA #1              ; house 0
+            STA $C569
+            LDA #2              ; house 1
+            STA $C56A
+            LDA #3              ; house 2
+            STA $C56B
+            LDA #4              ; house 3
+            STA $C56C
+            LDA #5              ; house 4
+            STA $C56D
+
             LDX #0              ; Change tile color 
 _XLOOP2
             LDY #0              
@@ -219,29 +232,44 @@ _COPYCOLOR4 LDA #$0C            ; forground color (0=black) backgrund color (5=g
             CPX #5
             BNE _XLOOP2 
 
-            LDA #$72            ; Store shared colors (light blue=14 and red=2)
-            STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
-
-            LDA #1              ; print C
+            LDA #6              ; print C
             STA $C7D0
-            LDA #2              ; print o
+            LDA #7              ; print o
             STA $C7D1
-            LDA #3              ; print d
+            LDA #8              ; print d
             STA $C7D2
-            LDA #4              ; print y
+            LDA #9              ; print y
             STA $C7D3
-            LDA #5              ; print v
+            LDA #10             ; print v
             STA $C7D4
-            LDA #6              ; print i
+            LDA #11             ; print i
             STA $C7D5
-            LDA #7              ; print s
+            LDA #12             ; print s
             STA $C7D6
-            LDA #6              ; print i
+            LDA #11             ; print i
             STA $C7D7
-            LDA #2              ; print o
+            LDA #7              ; print o
             STA $C7D8
-            LDA #8              ; print n
-            STA $C7D9              
+            LDA #13             ; print n
+            STA $C7D9
+
+            LDA #14             ; tree 0
+            STA $C6A0
+            LDA #15             ; tree 1
+            STA $C6A1
+            LDA #16             ; tree 2
+            STA $C6A2
+            LDA #17             ; tree 3
+            STA $C6C9
+
+            LDA #$D5            ; set color of upper tree to light green (=D)
+            STA $DAA0
+            LDA #$D5
+            STA $DAA1
+            LDA #$D5
+            STA $DAA2
+            LDA #$95            ; set color of trunk to brown (=9)
+            STA $D6A9             
 
 _LOOP      
             LDA VIA_IORA        ; Read joystick
@@ -317,52 +345,6 @@ SPRITEDATA
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00
 
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; house left
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %01_01_01_01
-.BYTE %00_00_00_00, %00_00_01_01, %01_01_01_01
-.BYTE %00_00_00_01, %01_01_01_01, %01_01_01_01
-.BYTE %00_00_00_11, %11_11_11_11, %11_11_11_11
-.BYTE %00_00_00_11, %11_11_00_00, %11_11_11_00
-.BYTE %00_00_00_11, %11_11_00_00, %11_11_11_00
-.BYTE %00_00_00_11, %11_11_11_11, %11_11_11_11
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00
-
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; house right
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %01_01_01_01, %00_00_00_00, %00_00_00_00
-.BYTE %01_01_01_01, %01_01_00_00, %00_00_00_00
-.BYTE %01_01_01_01, %01_01_01_01, %01_00_00_00
-.BYTE %11_11_11_11, %11_11_11_11, %11_00_00_00
-.BYTE %00_11_11_11, %00_00_11_11, %11_00_00_00
-.BYTE %00_11_11_11, %00_00_11_11, %11_00_00_00
-.BYTE %11_11_11_11, %11_11_11_11, %11_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00
-
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; explode 
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
@@ -386,9 +368,7 @@ SPRITEDATA
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00
 
-SPRITEDATA2
-
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; fire
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; fire bullet
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
@@ -433,6 +413,8 @@ SPRITEDATA2
 .BYTE %00_00_00_11, %11_11_11_11, %11_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00
+
+SPRITEDATA2
 
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; heli
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
@@ -503,23 +485,23 @@ SPRITEDATA2
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00
 
-.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; tree
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00 ; ship (TODO remove placeholder)
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_10_10_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_10_10_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_10_10_00, %00_00_00_00
-.BYTE %00_00_00_10, %10_10_10_10, %10_00_00_00
-.BYTE %00_00_00_10, %10_10_10_10, %10_00_00_00
-.BYTE %00_00_00_10, %10_10_10_10, %10_00_00_00
-.BYTE %10_10_10_10, %10_10_10_10, %10_10_10_10
-.BYTE %10_10_10_10, %10_10_10_10, %10_10_10_10
-.BYTE %00_00_00_10, %10_10_10_10, %10_00_00_00
-.BYTE %00_00_00_00, %00_01_01_00, %00_00_00_00
-.BYTE %00_00_00_00, %00_01_01_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_10, %10_00_00_00, %00_00_00_00
+.BYTE %00_00_10_10, %10_00_00_00, %00_00_00_00
+.BYTE %00_10_10_10, %10_10_10_00, %00_00_00_00
+.BYTE %01_01_01_01, %01_01_01_01, %01_01_01_01
+.BYTE %01_01_01_01, %01_01_01_01, %01_01_00_00
+.BYTE %00_11_11_11, %11_11_11_11, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
+.BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
 .BYTE %00_00_00_00, %00_00_00_00, %00_00_00_00
@@ -536,6 +518,51 @@ CHARDATA
   .BYTE %00000000
   .BYTE %00000000
   .BYTE %00000000
+
+  .BYTE %00000000 ; house tile 0
+  .BYTE %00000001
+  .BYTE %01010101
+  .BYTE %10101010
+  .BYTE %10101000
+  .BYTE %10101000
+  .BYTE %10101010
+  .BYTE %00000000
+
+  .Byte %00010101 ; house tile 1
+  .Byte %01010101
+  .Byte %01010101
+  .Byte %10101010
+  .Byte %00101010
+  .Byte %00101010
+  .Byte %10101010
+  .Byte %00000000
+
+  .Byte %01010101 ; house tile 2
+  .Byte %01010101
+  .Byte %01010101
+  .Byte %10101010
+  .Byte %00001010
+  .Byte %00001010
+  .Byte %10101010
+  .Byte %00000000
+
+  .BYTE %01000000 ; house tile 3
+  .BYTE %01010100 
+  .BYTE %01010101 
+  .BYTE %10101010 
+  .BYTE %10000010 
+  .BYTE %10000010 
+  .BYTE %10101010 
+  .Byte %00000000
+
+  .Byte %00000000 ; house tile 4
+  .Byte %00000000
+  .Byte %01010000
+  .Byte %10100000
+  .Byte %10100000
+  .Byte %10100000
+  .Byte %10100000
+  .Byte %00000000
 
   .BYTE %00110000   ; C
   .BYTE %11001100
@@ -608,6 +635,42 @@ CHARDATA
   .BYTE %11001100
   .BYTE %11001100
   .BYTE %11001100
+
+  .BYTE %00000000 ; tree 0
+  .BYTE %00000000
+  .BYTE %00000001
+  .BYTE %00000001
+  .BYTE %00000001
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %00000001
+
+  .BYTE %00010100 ; tree 1 
+  .BYTE %00010100 
+  .BYTE %01010101 
+  .BYTE %01010101 
+  .BYTE %01010101 
+  .BYTE %01010101 
+  .BYTE %01010101 
+  .BYTE %01010101 
+
+  .BYTE %00000000 ; tree 2
+  .BYTE %00000000
+  .BYTE %01000000
+  .BYTE %01000000
+  .BYTE %01000000
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01000000
+
+  .BYTE %00101000 ; tree 4 / trunk (mind indentation)
+  .BYTE %00101000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
 
 LAST                            ; End of the entire program
 
