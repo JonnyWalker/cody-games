@@ -23,8 +23,8 @@ MAIN                            ; The program starts running from here
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
             LDX #0              ; Change tile color of first row
-_COPYCOLOR  LDA #$83
-            STA $D9ea,X         ; start at tile 490 ($1f4)
+_COPYCOLOR  LDA #$83            ; Color 1: orange=8, Color 0: cyan=3
+            STA $D9EA,X         ; start at tile 490 (=$1EA), $D800+$1EA=$D9EA
             INX
             CPX #20
             BNE _COPYCOLOR  
@@ -38,7 +38,7 @@ _COPYCHAR   LDA CHARDATA,X
 
             LDX #0              ; Copy 20 tiles into screen memory
 _COPYSCRN   LDA #1
-            STA $C5ea,X         ; start at tile 490 ($1f4)
+            STA $C5EA,X         ; start at tile 490 (=$1EA), $C400+$1EA=$C5EA
             INX
             CPX #20
             BNE _COPYSCRN
@@ -65,6 +65,6 @@ CHARDATA
   .BYTE %11111111
   .BYTE %11111111
 
-LAST                            ; End of the entire program
+LAST                 ; End of the entire program
 
 .ENDLOGICAL

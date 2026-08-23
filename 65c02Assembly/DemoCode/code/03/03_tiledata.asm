@@ -19,11 +19,12 @@ MAIN                            ; The program starts running from here
                                 ; and set screen memory location $C400 (A000+9*1024=C400)
             STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
 
-            LDA #$E2            ; Store shared colors (light blue=14 and red=2)
+            LDA #$E2            ; Store shared colors  
+                                ; Color 3: light blue=14, Color 2: red=2
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
             LDX #0              ; Change tile color of first row
-_COPYCOLOR  LDA #$83
+_COPYCOLOR  LDA #$83            ; Color 1: orange=8, Color 0: cyan=3
             STA $D800,X
             INX
             CPX #40
@@ -36,7 +37,7 @@ _COPYCHAR   LDA CHARDATA,X
             CPX #16
             BNE _COPYCHAR
 
-            LDX #10             ; Copy 20 tiles into screen memory
+            LDX #10             ; Copy 20 tiles into screen memory (tiles 10-30)
 _COPYSCRN   LDA #1
             STA $C400,X
             INX
@@ -65,6 +66,6 @@ CHARDATA
   .BYTE %11111111
   .BYTE %11111111
 
-LAST                            ; End of the entire program
+LAST                ; End of the entire program
 
 .ENDLOGICAL

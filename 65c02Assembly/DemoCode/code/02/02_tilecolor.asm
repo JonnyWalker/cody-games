@@ -13,7 +13,7 @@
 
 MAIN                            ; The program starts running from here
             LDA #$E2            ; Set border color (Bits 0-3) to red=2 
-                                ; and set color memory to $D800 ($A000+14*1024=$D800), E=14 (Bits 7-4)
+                                ; and set color memory to $D800 ($A000+14*1024=$D800, E=14 (Bits 7-4))
             STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)
 
             LDX #0              ; Change tile color

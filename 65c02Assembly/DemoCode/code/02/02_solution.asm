@@ -24,12 +24,12 @@ _COPYCOLOR  LDA #$03            ; forground color (0=black) backgrund color (3=c
             CPX #40
             BNE _COPYCOLOR 
 _COPYCOLOR2 LDA #$04            ; forground color (0=black) backgrund color (4=purple)
-            STA $D800,X         ; Copy colors to color memory $D828 to $D83c (20 Bytes)
+            STA $D800,X         ; Copy colors to color memory $D828 to $D83C (20 Bytes)
             INX
             CPX #60
             BNE _COPYCOLOR2  
 _COPYCOLOR3 LDA #$05            ; forground color (0=black) backgrund color (5=green)
-            STA $D800,X         ; Copy colors to color memory $D83c to $D850 (40 Bytes)
+            STA $D800,X         ; Copy colors to color memory $D83C to $D850 (20 Bytes)
             INX
             CPX #80
             BNE _COPYCOLOR3   
