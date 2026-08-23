@@ -7,8 +7,9 @@ Review the Assembly example code along with the comments in each file, then comp
 # Assemble and Run 
 
 `64tass --mw65c02 --nostart -o 01_bordercolor.bin 01_bordercolor.asm` 
-
-`cargo run --release -- --as-cartridge ../cody-games/65c02Assembly/DemoCode/01_bordercolor.bin` 
+- Option 1: https://github.com/iTitus/cody_emulator 
+`cargo run --release -- --as-cartridge ../cody-games/65c02Assembly/DemoCode/code/01/01_bordercolor.bin` 
+- Option 2: https://github.com/Mimonsi/CodyNET/
 
 # 01 Border Color
 - Book: Page 309 "CHANGING THE BORDER COLOR"
