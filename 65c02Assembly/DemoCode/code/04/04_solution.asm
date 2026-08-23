@@ -48,7 +48,7 @@ _COPYCHAR   LDA CHARDATA,X
             STA $C407
             LDA #6              ; print D
             STA $C408
-            LDA #7              ; print D
+            LDA #7              ; print Y
             STA $C409
 
 _DONE       JMP _DONE           ; Loops forever
