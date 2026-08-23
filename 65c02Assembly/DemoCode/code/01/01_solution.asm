@@ -12,9 +12,9 @@
 .LOGICAL    ADDR                ; The actual program gets loaded at ADDR
 
 MAIN                            ; The program starts running from here
-            LDA VID_COLR        ; Load current value of color register  
-            ORA #$06            ; Set border color (Bits 0-3) to red=2 without changing Bits 4-7
-            STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)                  
+            LDA #$E6            ; Set border color (Bits 0-3) to blue=6 
+                                ; and set color memory to $D800 (A000+14*1024=D800, E=14)
+            STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)                
 _DONE       JMP _DONE           ; Loops forever
 
 LAST                            ; End of the entire program
