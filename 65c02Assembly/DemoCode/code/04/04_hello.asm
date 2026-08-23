@@ -29,32 +29,7 @@ _COPYCHAR   LDA CHARDATA,X
             CPX #40             ; 5*8=40
             BNE _COPYCHAR
             
-; set characters from $C400 to $C500 to empty tile
-            LDX #0              
-_EMPTY0
-            STZ $C400,X
-            INX
-            BNE _EMPTY0
-; set characters from $C500 to $C600 to empty tile
-            LDX #0              
-_EMPTY1
-            STZ $C500,X
-            INX
-            BNE _EMPTY1
-
-; set characters from $C600 to $C700 to empty tile
-            LDX #0              
-_EMPTY2
-            STZ $C600,X
-            INX
-            BNE _EMPTY2
-; set characters from $C700 to $C800 to empty tile
-            LDX #0              
-_EMPTY3
-            STZ $C700,X
-            INX
-            BNE _EMPTY3
-
+            JSR CLEAR_SCREEN    ; replace all characters with empty character
 
             LDA #1              ; print H
             STA $C400
@@ -68,6 +43,8 @@ _EMPTY3
             STA $C404
 
 _DONE       JMP _DONE           ; Loops forever
+
+.include "graphics.asm"
 
 CHARDATA
 
