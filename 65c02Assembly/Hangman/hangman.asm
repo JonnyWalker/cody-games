@@ -2,12 +2,14 @@
 
 ; Zero Page
 
-CURSOR_X = $D0      ; location of the next Letter to be printed 
-KEY_PRESSED = $D1   ; codscii value of the pressed key
-WRONG_LETTERS = $D2 ; inc every time the letters is not part of the word
+CURSOR_X = $D0          ; location of the next Letter to be printed 
+KEY_PRESSED = $D1       ; codscii value of the pressed key
+WRONG_LETTERS = $D2     ; inc every time the letters is not part of the word
+SECRET_WORD_LEN = $D3 
 
-; CONSTANTS
-LETTER_START = $C4AA
+; CONSTANTS where to print
+WORD_PRINT_START = $C478
+LETTER_PRINT_START = $C4AA
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -45,7 +47,7 @@ _Print_Tried
             LDA Text1, X
             STA $C4A0, X  
             INX
-            CPX #11
+            CPX #10
             BNE _Print_Tried
 
             ; First letter will be printed $C484+CURSOR_X
@@ -56,6 +58,10 @@ _Print_Tried
             LDA #$00
             STA WRONG_LETTERS
 
+            ; remember numer of letters
+            LDA #$07
+            STA SECRET_WORD_LEN
+
 _GAME_LOOP       
         JSR KEY_TO_A
         BEQ _GAME_LOOP
@@ -63,25 +69,45 @@ _GAME_LOOP
         STA KEY_PRESSED
 
         ; check if letter was entered before by iterating 
-        ; from LETTER_START to LETTER_START+X
+        ; from LETTER_PRINT_START to LETTER_PRINT_START+X
         LDX #$00
  _CHECK_ALREADY_PRESSED
-        LDA LETTER_START, X
+        LDA LETTER_PRINT_START, X
         CMP KEY_PRESSED
         BEQ _NO_NEW_LETTER_ENTERED
         INX
         CPX CURSOR_X
         BNE _CHECK_ALREADY_PRESSED
 
-        ; print key (codscii value) at LETTER_START+X
+        ; print key (codscii value) at LETTER_PRINT_START+X
         LDX CURSOR_X
         LDA KEY_PRESSED
-        STA LETTER_START, X
+        STA LETTER_PRINT_START, X
 
         ; CURSOR_X++
         TXA
         INC A
         STA CURSOR_X
+
+        ; Check if letter in word
+        LDY #$00 ; Y=false, letter not in word
+        LDX #$00
+  _CHECK_IF_IN_WORD
+        LDA KEY_PRESSED
+        CMP Word0, X
+        BNE _NO_LETTER_MATCH
+        STA WORD_PRINT_START, X ; print letter at correct location of secret word
+        LDY #$01 ; Y=true, letter in word
+  _NO_LETTER_MATCH
+        INX
+        CPX SECRET_WORD_LEN
+        BNE _CHECK_IF_IN_WORD
+
+        ; TODO: check if won if Y=true
+        ; TODO: draw hangman if Y=false
+
+    
+
 
  _NO_NEW_LETTER_ENTERED
 
@@ -384,6 +410,7 @@ _NO_KEY
 
 Text0 .TEXT "WORD LEN:"
 Text1 .TEXT "YOU TRIED:"
+Word0 .TEXT "HANGMAN"
 
 LAST                            ; End of the entire program
 
