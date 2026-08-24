@@ -62,7 +62,8 @@ _Print_Tried
             LDA #$07
             STA SECRET_WORD_LEN
 
-_GAME_LOOP       
+_GAME_LOOP
+        ; TODO: wait blank and draw hangman       
         JSR KEY_TO_A
         BEQ _GAME_LOOP
         ; key was pressed and codscii value is in A 
@@ -103,13 +104,21 @@ _GAME_LOOP
         CPX SECRET_WORD_LEN
         BNE _CHECK_IF_IN_WORD
 
+        CPY #$00
+        BEQ _LETTER_NOT_IN_WORD
         ; TODO: check if won if Y=true
-        ; TODO: draw hangman if Y=false
+        JMP _GAME_LOOP
+        
 
-    
+_LETTER_NOT_IN_WORD
+        ; new letter and not in word
+        LDA WRONG_LETTERS
+        INC A
+        STA WRONG_LETTERS
 
 
  _NO_NEW_LETTER_ENTERED
+
 
         JMP _GAME_LOOP           ; Loops forever
 
