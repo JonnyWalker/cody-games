@@ -58,9 +58,15 @@ _Print_Tried
             LDA #$00
             STA WRONG_LETTERS
 
-            ; remember numer of letters
+            ; remember number of letters
             LDA #$07
             STA SECRET_WORD_LEN
+
+            ; print number of letters (only works for word length <10)
+            CLC
+            ADC #48  ; 0 starts at codscii value 48
+            STA $C432
+
 
 _GAME_LOOP
         ; TODO: wait blank and draw hangman       
