@@ -6,7 +6,7 @@ CURSOR_X = $D0          ; location of the next Letter to be printed
 KEY_PRESSED = $D1       ; codscii value of the pressed key
 WRONG_LETTERS = $D2     ; inc every time the letters is not part of the word
 SECRET_WORD_LEN = $D3
-RANDOM_VALUE = $D4      ; TODO 
+RANDOM_VALUE = $D4      ; TODO: used to select a random word
 
 ; CONSTANTS where to print
 WORD_PRINT_START = $C478
@@ -35,9 +35,52 @@ MAIN                            ; The program starts running from here
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm) 
 
             JSR LOAD_CODSCII_TO_CHAR_MEM
+
+
+_TITLE_SCREEN
             LDA #$2C            ; clear with red=2 and gray=C 
             JSR CLEAR_SCREEN    ; replace all characters with empty character
 
+            LDX #0
+    _Print_Text4
+            LDA Text4, X
+            STA $C428, X  
+            INX
+            CPX #7
+            BNE _Print_Text4
+
+            LDX #0
+    _Print_Text5
+            LDA Text5, X
+            STA $C450, X  
+            INX
+            CPX #31
+            BNE _Print_Text5
+
+ _NEXT_GAME ; game loop jumps back here after game end
+            LDX #0
+    _Print_Text6
+            LDA Text6, X
+            STA $C798, X  
+            INX
+            CPX #24
+            BNE _Print_Text6
+
+    _WAIT_FOR_SPACE
+        ; random between 0 and 255
+        LDA RANDOM_VALUE
+        INC A
+        STA RANDOM_VALUE
+
+        ; check for space key
+        JSR KEY_TO_A
+        CMP #$20
+        BNE _WAIT_FOR_SPACE 
+
+_NEW_GAME
+            LDA #$2C            ; clear with red=2 and gray=C 
+            JSR CLEAR_SCREEN    ; replace all characters with empty character
+            
             ; prints string in 'Text0'
             LDX #0
 _Print_Word_Len_Text 
@@ -77,6 +120,8 @@ _GAME_LOOP
         ; TODO: wait blank and draw hangman       
         JSR KEY_TO_A
         BEQ _GAME_LOOP
+        CMP #$20
+        BEQ _GAME_LOOP ; SPACE
         ; key was pressed and codscii value is in A 
         STA KEY_PRESSED
 
@@ -173,10 +218,7 @@ _GAME_LOOP
 
 
  _NO_NEW_LETTER_ENTERED
-        JMP _GAME_LOOP           ; End of main game loop
-
-_NEXT_GAME
-        JMP _NEXT_GAME                 ; Loops forever
+        JMP _GAME_LOOP           ; End of main game loop    
 
 .include "graphics.asm"
 .include "key_input.asm"
@@ -185,6 +227,9 @@ Text0 .TEXT "WORD LEN:"
 Text1 .TEXT "YOU TRIED:"
 Text2 .TEXT "YOU WON!"
 Text3 .TEXT "YOU LOSE!"
+Text4 .TEXT "HANGMAN"
+Text5 .TEXT "GUESS A WORD BY TYPING LETTERS."
+Text6 .TEXT "PRESS SPACE TO CONTINUE."
 WORD_LENGTH .BYTE 7
 Word0 .TEXT "HANGMAN"
 
