@@ -5,7 +5,8 @@
 CURSOR_X = $D0          ; location of the next Letter to be printed 
 KEY_PRESSED = $D1       ; codscii value of the pressed key
 WRONG_LETTERS = $D2     ; inc every time the letters is not part of the word
-SECRET_WORD_LEN = $D3 
+SECRET_WORD_LEN = $D3
+RANDOM_VALUE = $D4      ; TODO 
 
 ; CONSTANTS where to print
 WORD_PRINT_START = $C478
@@ -34,23 +35,25 @@ MAIN                            ; The program starts running from here
             LDA #$2C            ; clear with red=2 and gray=C 
             JSR CLEAR_SCREEN    ; replace all characters with empty character
 
+            ; prints string in 'Text0'
             LDX #0
-_Print_Instructions 
+_Print_Word_Len_Text 
             LDA Text0, X
             STA $C428, X  
             INX
             CPX #9
-            BNE _Print_Instructions
+            BNE _Print_Word_Len_Text
 
+            ; prints string in 'Text1'
             LDX #0
-_Print_Tried 
+_Print_Tried_Text
             LDA Text1, X
             STA $C4A0, X  
             INX
             CPX #10
-            BNE _Print_Tried
+            BNE _Print_Tried_Text
 
-            ; First letter will be printed $C484+CURSOR_X
+            ; First letter will be printed $C484+CURSOR_X (see below)
             LDA #$01
             STA CURSOR_X
 
@@ -59,14 +62,13 @@ _Print_Tried
             STA WRONG_LETTERS
 
             ; remember number of letters
-            LDA #$07
+            LDA WORD_LENGTH
             STA SECRET_WORD_LEN
 
             ; print number of letters (only works for word length <10)
             CLC
-            ADC #48  ; 0 starts at codscii value 48
+            ADC #48  ; '0' char starts at codscii value 48
             STA $C432
-
 
 _GAME_LOOP
         ; TODO: wait blank and draw hangman       
@@ -99,7 +101,7 @@ _GAME_LOOP
         ; Check if letter in word
         LDY #$00 ; Y=false, letter not in word
         LDX #$00
-  _CHECK_IF_IN_WORD
+ _CHECK_IF_IN_WORD
         LDA KEY_PRESSED
         CMP Word0, X
         BNE _NO_LETTER_MATCH
@@ -115,8 +117,7 @@ _GAME_LOOP
         ; TODO: check if won if Y=true
         JMP _GAME_LOOP
         
-
-_LETTER_NOT_IN_WORD
+ _LETTER_NOT_IN_WORD
         ; new letter and not in word
         LDA WRONG_LETTERS
         INC A
@@ -124,307 +125,14 @@ _LETTER_NOT_IN_WORD
 
 
  _NO_NEW_LETTER_ENTERED
-
-
         JMP _GAME_LOOP           ; Loops forever
 
-; loads the ASCII value of a Key to A register
-; TODO: improve performance
-KEY_TO_A
-        LDA #0
-        STA VIA_IORA
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%10000
-        BNE _NEXT_KEY0
-        LDA #"O"
-        RTS
-_NEXT_KEY0
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%01000
-        BNE _NEXT_KEY1
-        LDA #"U"
-        RTS
-_NEXT_KEY1
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00100
-        BNE _NEXT_KEY2
-        LDA #"T"
-        RTS
-_NEXT_KEY2
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00010
-        BNE _NEXT_KEY3
-        LDA #"E"
-        RTS
-_NEXT_KEY3
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00001
-        BNE _NEXT_KEY4
-        LDA #"Q"
-        RTS
-_NEXT_KEY4
-
-        LDA #1
-        STA VIA_IORA
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%10000
-        BNE _NEXT_KEY5
-        LDA #"L"
-        RTS
-_NEXT_KEY5
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%01000
-        BNE _NEXT_KEY6
-        LDA #"J"
-        RTS
-_NEXT_KEY6
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00100
-        BNE _NEXT_KEY7
-        LDA #"G"
-        RTS
-_NEXT_KEY7
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00010
-        BNE _NEXT_KEY8
-        LDA #"D"
-        RTS
-_NEXT_KEY8
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00001
-        BNE _NEXT_KEY9
-        LDA #"A"
-        RTS
-_NEXT_KEY9
-
-        LDA #2
-        STA VIA_IORA
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%10000
-        BNE _NEXT_KEY10
-        LDA #$00 ; TODO: support META
-        RTS
-_NEXT_KEY10
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%01000
-        BNE _NEXT_KEY11
-        LDA #"N"
-        RTS
-_NEXT_KEY11
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00100
-        BNE _NEXT_KEY12
-        LDA #"V"
-        RTS
-_NEXT_KEY12
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00010
-        BNE _NEXT_KEY13
-        LDA #"X"
-        RTS
-_NEXT_KEY13
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00001
-        BNE _NEXT_KEY14
-        LDA #$00 ; TODO: support CODY
-        RTS
-_NEXT_KEY14 
-
-        LDA #3
-        STA VIA_IORA
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%10000
-        BNE _NEXT_KEY16
-        LDA #$00 ; TODO: support ARROW
-        RTS
-_NEXT_KEY16 ; TODO: fix off-by one
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%01000
-        BNE _NEXT_KEY17
-        LDA #"M"
-        RTS
-_NEXT_KEY17
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00100
-        BNE _NEXT_KEY18
-        LDA #"B"
-        RTS
-_NEXT_KEY18
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00010
-        BNE _NEXT_KEY19
-        LDA #"C"
-        RTS
-_NEXT_KEY19
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00001
-        BNE _NEXT_KEY20
-        LDA #"Z" 
-        RTS
-_NEXT_KEY20
-
-        LDA #4
-        STA VIA_IORA
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%10000
-        BNE _NEXT_KEY21
-        LDA #$00 ; TODO: support SPACE
-        RTS
-_NEXT_KEY21
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%01000
-        BNE _NEXT_KEY22
-        LDA #"K"
-        RTS
-_NEXT_KEY22
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00100
-        BNE _NEXT_KEY23
-        LDA #"H"
-        RTS
-_NEXT_KEY23
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00010
-        BNE _NEXT_KEY24
-        LDA #"F"
-        RTS
-_NEXT_KEY24
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00001
-        BNE _NEXT_KEY25
-        LDA #"S" 
-        RTS
-_NEXT_KEY25
-
-        LDA #5
-        STA VIA_IORA
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%10000
-        BNE _NEXT_KEY26
-        LDA #"P"
-        RTS
-_NEXT_KEY26
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%01000
-        BNE _NEXT_KEY27
-        LDA #"I"
-        RTS
-_NEXT_KEY27
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00100
-        BNE _NEXT_KEY28
-        LDA #"Y"
-        RTS
-_NEXT_KEY28
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00010
-        BNE _NEXT_KEY29
-        LDA #"R"
-        RTS
-_NEXT_KEY29
-        LDA VIA_IORA        
-        LSR A
-        LSR A
-        LSR A
-        AND #%00001
-        BNE _NO_KEY
-        LDA #"W" 
-        RTS
-_NO_KEY
-        LDA #$00 ; nothing
-        RTS
-
 .include "graphics.asm"
+.include "key_input.asm"
 
 Text0 .TEXT "WORD LEN:"
 Text1 .TEXT "YOU TRIED:"
+WORD_LENGTH .BYTE 7
 Word0 .TEXT "HANGMAN"
 
 LAST                            ; End of the entire program
