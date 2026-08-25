@@ -13,6 +13,7 @@ WORD_PRINT_START = $C478
 LETTER_PRINT_START = $C4AA
 MESSAGE_PRINT_START = $C4C8
 BLANK_CHAR = $00
+MAX_MISTAKES = #$05
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -133,7 +134,7 @@ _GAME_LOOP
 
         ; skip won message  if fals
         CPY #$00
-        BEQ _GAME_LOOP
+        BEQ _NOT_WON
 
         ; print won text
         LDX #0
@@ -143,9 +144,9 @@ _GAME_LOOP
         INX
         CPX #8
         BNE _Print_Won_Text
-        JMP _WIN
+        JMP _NEXT_GAME
 
- _NEXT_LOOP        
+ _NOT_WON        
         JMP _GAME_LOOP
         
  _LETTER_NOT_IN_WORD
@@ -154,12 +155,28 @@ _GAME_LOOP
         INC A
         STA WRONG_LETTERS
 
+        ; check game over state
+        CMP MAX_MISTAKES
+        BNE _NOT_GAME_OVER
+
+        ; print game over text
+        LDX #0
+ _Print_Gameover_Text
+        LDA Text3, X
+        STA MESSAGE_PRINT_START, X  
+        INX
+        CPX #9
+        BNE _Print_Gameover_Text
+        JMP _NEXT_GAME
+
+ _NOT_GAME_OVER
+
 
  _NO_NEW_LETTER_ENTERED
         JMP _GAME_LOOP           ; End of main game loop
 
-_WIN
-        JMP _WIN                 ; Loops forever
+_NEXT_GAME
+        JMP _NEXT_GAME                 ; Loops forever
 
 .include "graphics.asm"
 .include "key_input.asm"
@@ -167,6 +184,7 @@ _WIN
 Text0 .TEXT "WORD LEN:"
 Text1 .TEXT "YOU TRIED:"
 Text2 .TEXT "YOU WON!"
+Text3 .TEXT "YOU LOSE!"
 WORD_LENGTH .BYTE 7
 Word0 .TEXT "HANGMAN"
 
