@@ -11,6 +11,8 @@ RANDOM_VALUE = $D4      ; TODO
 ; CONSTANTS where to print
 WORD_PRINT_START = $C478
 LETTER_PRINT_START = $C4AA
+MESSAGE_PRINT_START = $C4C8
+BLANK_CHAR = $00
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -87,8 +89,9 @@ _GAME_LOOP
         INX
         CPX CURSOR_X
         BNE _CHECK_ALREADY_PRESSED
+        ; new letter
 
-        ; print key (codscii value) at LETTER_PRINT_START+X
+        ; print key/letter (codscii value) at LETTER_PRINT_START+X
         LDX CURSOR_X
         LDA KEY_PRESSED
         STA LETTER_PRINT_START, X
@@ -98,7 +101,7 @@ _GAME_LOOP
         INC A
         STA CURSOR_X
 
-        ; Check if letter in word
+        ; Check if letter in word by iterating over the secret word
         LDY #$00 ; Y=false, letter not in word
         LDX #$00
  _CHECK_IF_IN_WORD
@@ -107,14 +110,42 @@ _GAME_LOOP
         BNE _NO_LETTER_MATCH
         STA WORD_PRINT_START, X ; print letter at correct location of secret word
         LDY #$01 ; Y=true, letter in word
-  _NO_LETTER_MATCH
+ _NO_LETTER_MATCH
         INX
         CPX SECRET_WORD_LEN
         BNE _CHECK_IF_IN_WORD
 
         CPY #$00
         BEQ _LETTER_NOT_IN_WORD
-        ; TODO: check if won if Y=true
+
+        ; check if won by searching for blank chars
+        LDY #$01 ; Y = true = won
+        LDX #$00
+ _CHECK_WON
+        LDA BLANK_CHAR
+        CMP WORD_PRINT_START, X
+        BNE _NO_BLANK
+        LDY #$00 ; Y = false = not won
+ _NO_BLANK
+        INX 
+        CPX SECRET_WORD_LEN
+        BNE _CHECK_WON
+
+        ; skip won message  if fals
+        CPY #$00
+        BEQ _GAME_LOOP
+
+        ; print won text
+        LDX #0
+ _Print_Won_Text
+        LDA Text2, X
+        STA MESSAGE_PRINT_START, X  
+        INX
+        CPX #8
+        BNE _Print_Won_Text
+        JMP _WIN
+
+ _NEXT_LOOP        
         JMP _GAME_LOOP
         
  _LETTER_NOT_IN_WORD
@@ -125,13 +156,17 @@ _GAME_LOOP
 
 
  _NO_NEW_LETTER_ENTERED
-        JMP _GAME_LOOP           ; Loops forever
+        JMP _GAME_LOOP           ; End of main game loop
+
+_WIN
+        JMP _WIN                 ; Loops forever
 
 .include "graphics.asm"
 .include "key_input.asm"
 
 Text0 .TEXT "WORD LEN:"
 Text1 .TEXT "YOU TRIED:"
+Text2 .TEXT "YOU WON!"
 WORD_LENGTH .BYTE 7
 Word0 .TEXT "HANGMAN"
 
