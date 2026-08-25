@@ -1,19 +1,20 @@
 .include "codyconstants.asm"
 
-; Zero Page
+; Zero page variables
 
-CURSOR_X = $D0          ; location of the next Letter to be printed 
+CURSOR_X = $D0          ; location of the next letter to be printed 
 KEY_PRESSED = $D1       ; codscii value of the pressed key
 WRONG_LETTERS = $D2     ; inc every time the letters is not part of the word
-SECRET_WORD_START = $D3
-SECRET_WORD_LEN = $D4
-RANDOM_VALUE = $D5      ; TODO: used to select a random word
+SECRET_WORD_LEN = $D3
+RANDOM_VALUE = $D4      ; used to select a random word
+WORD_PTR = $D5          ; 2 BYTES Pointer in word string according to random value
+SECRET_WORD = $D7       ; start of secrect word, will be filled later
 
-; CONSTANTS where to print
+; CONSTANTS: where to print and other stuff
 WORD_PRINT_START = $C478
 LETTER_PRINT_START = $C4AA
 MESSAGE_PRINT_START = $C4C8
-BLANK_CHAR = $00
+BLANK_CHAR = #$00
 MAX_MISTAKES = #$05
 
 ; Program header for Cody Basic's loader (needs to be first)
@@ -37,7 +38,7 @@ MAIN                            ; The program starts running from here
 
             JSR LOAD_CODSCII_TO_CHAR_MEM
 
-
+; show instruction screen, compute random value and wait for space key
 _TITLE_SCREEN
             LDA #$2C            ; clear with red=2 and gray=C 
             JSR CLEAR_SCREEN    ; replace all characters with empty character
@@ -68,23 +69,55 @@ _TITLE_SCREEN
             BNE _Print_Text6
 
     _WAIT_FOR_SPACE
-        ; random between 0 and 255
-        LDA RANDOM_VALUE
-        INC A
-        STA RANDOM_VALUE
+            ; compute random value between 0 and 255
+            LDA RANDOM_VALUE
+            INC A
+            STA RANDOM_VALUE
 
-        ; check for space key
-        JSR KEY_TO_A
-        CMP #$20
-        BNE _WAIT_FOR_SPACE 
+            ; exit loop on space key
+            JSR KEY_TO_A
+            CMP #$20
+            BNE _WAIT_FOR_SPACE 
 
 _NEW_GAME
+            ; loop moves word pointer to word of random value
+            ; SECRET_WORD_LEN and WORD_PTR should match after the loop
+            
+            ; Start word pointer at beginning of 'Words' (see at end of file)
+            LDA #<Words       
+            STA WORD_PTR+0
+            LDA #>Words
+            STA WORD_PTR+1 
+            LDX #$00
+ _MOVE_WORD_PTR
+            ; remember word length of word X
+            LDA WORD_LENGTH, X
+            STA SECRET_WORD_LEN
+
+            ; Check if we have moved the pointer RANDOM_VALUE-times and exit if true
+            CPX RANDOM_VALUE
+            BEQ _WORD_POINTER_DONE
+
+            ; WORD_PTR += WORD_LENGTH[X]
+            CLC                
+            LDA WORD_PTR+0
+            ADC WORD_LENGTH, X
+            STA WORD_PTR+0
+            LDA WORD_PTR+1
+            ADC #0
+            STA WORD_PTR+1
+
+            ; otherwise loop again and X++
+            INX
+            JMP _MOVE_WORD_PTR
+ _WORD_POINTER_DONE 
+
             LDA #$2C            ; clear with red=2 and gray=C 
             JSR CLEAR_SCREEN    ; replace all characters with empty character
 
             ; prints string in 'Text0'
             LDX #0
-_Print_Word_Len_Text 
+ _Print_Word_Len_Text 
             LDA Text0, X
             STA $C428, X  
             INX
@@ -93,7 +126,7 @@ _Print_Word_Len_Text
 
             ; prints string in 'Text1'
             LDX #0
-_Print_Tried_Text
+ _Print_Tried_Text
             LDA Text1, X
             STA $C4A0, X  
             INX
@@ -108,36 +141,42 @@ _Print_Tried_Text
             LDA #$00
             STA WRONG_LETTERS
 
-            ; remember number of letters
-            LDA WORD_LENGTH
-            STA SECRET_WORD_LEN
+            ; copy WORD_PTR[X] to SECRET_WORD zero page variable
+            LDY #$00
+ _COPY_TO_SECRET_WORD
+            LDA (WORD_PTR), Y
+            STA SECRET_WORD, Y
+            INY
+            CPY SECRET_WORD_LEN
+            BNE _COPY_TO_SECRET_WORD
 
             ; print number of letters
             ; TODO(BUG): only works for word length <10
+            LDA SECRET_WORD_LEN
             CLC
             ADC #48  ; '0' char starts at codscii value 48
             STA $C432
 
 _GAME_LOOP
-        ; TODO: wait blank and draw hangman       
+        ; TODO: wait blank and draw hangman according to WRONG_LETTERS     
         JSR KEY_TO_A
         BEQ _GAME_LOOP
-        CMP #$20
-        BEQ _GAME_LOOP ; SPACE
-        ; key was pressed and codscii value is in A 
+        CMP #$20        ; SPACE KEY
+        BEQ _GAME_LOOP
+        ; letter key was pressed and codscii value is in A 
         STA KEY_PRESSED
 
-        ; check if letter was entered before by iterating 
+        ; loop: check if letter was entered before by iterating 
         ; from LETTER_PRINT_START to LETTER_PRINT_START+X
         LDX #$00
  _CHECK_ALREADY_PRESSED
         LDA LETTER_PRINT_START, X
         CMP KEY_PRESSED
-        BEQ _NO_NEW_LETTER_ENTERED
+        BEQ _NO_NEW_LETTER_ENTERED ; skip everything below
         INX
         CPX CURSOR_X
         BNE _CHECK_ALREADY_PRESSED
-        ; new letter
+        ; new letter entered
 
         ; print key/letter (codscii value) at LETTER_PRINT_START+X
         LDX CURSOR_X
@@ -149,12 +188,12 @@ _GAME_LOOP
         INC A
         STA CURSOR_X
 
-        ; Check if letter in word by iterating over the secret word
+        ; loop: Check if letter in secrect word by iterating over the secret word
         LDY #$00 ; Y=false, letter not in word
         LDX #$00
  _CHECK_IF_IN_WORD
         LDA KEY_PRESSED
-        CMP Words, X
+        CMP SECRET_WORD, X
         BNE _NO_LETTER_MATCH
         STA WORD_PRINT_START, X ; print letter at correct location of secret word
         LDY #$01 ; Y=true, letter in word
@@ -179,7 +218,7 @@ _GAME_LOOP
         CPX SECRET_WORD_LEN
         BNE _CHECK_WON
 
-        ; skip won message if false
+        ; skip won message if Y=false
         CPY #$00
         BEQ _NOT_WON
 
@@ -235,6 +274,6 @@ Text6 .TEXT "PRESS SPACE TO CONTINUE."
 WORD_LENGTH .BYTE 6, 3, 3, 6, 6, 5, 3, 4, 4, 4, 4, 3, 4, 4, 5, 4, 4, 4, 4, 6, 3, 3, 7, 8, 8, 4, 7, 4, 3, 5, 4, 6, 7, 6, 6, 5, 5, 6, 6, 4, 5, 7, 5, 5, 5, 7, 9, 4, 4, 6, 7, 6, 3, 5, 3, 10, 9, 8, 6, 6, 4, 3, 5, 3, 6, 7, 10, 3, 4, 6, 3, 4, 5, 4, 10, 5, 5, 4, 4, 3, 4, 5, 4, 7, 4, 4, 5, 4, 5, 3, 4, 4, 8, 11, 6, 8, 4, 6, 3, 3, 4, 4, 8, 3, 3, 5, 3, 4, 5, 4, 4, 7, 3, 3, 8, 4, 6, 4, 4, 4, 6, 5, 5, 4, 5, 5, 6, 5, 4, 4, 6, 6, 5, 6, 3, 4, 4, 5, 9, 4, 4, 5, 4, 4, 6, 5, 9, 7, 7, 8, 8, 4, 5, 4, 6, 6, 6, 4, 5, 4, 4, 3, 4, 4, 6, 7, 3, 4, 6, 8, 3, 4, 4, 6, 4, 4, 4, 7, 8, 3, 6, 6, 4, 5, 4, 6, 7, 5, 3, 7, 5, 3, 7, 6, 4, 6, 6, 5, 4, 5, 4, 7, 9, 11, 8, 6, 7, 3, 6, 5, 4, 7, 8, 10, 4, 8, 3, 8, 5, 4, 5, 8, 6, 8, 8, 8, 4, 8, 5, 7, 6, 7, 5, 7, 9, 8, 9, 7, 11, 6, 8, 6, 8, 8, 7, 6, 6, 8, 8, 5, 7, 7, 4, 6, 4
 Words .TEXT "ACTIONAGEAIRANIMALANSWERAPPLEARTBABYBACKBALLBANKBEDBILLBIRDBLOODBOATBODYBONEBOOKBOTTOMBOXBOYBROTHERBUILDINGBUSINESSCALLCAPITALCASECATCAUSECENTCENTERCENTURYCHANCECHANGECHECKCHILDCHURCHCIRCLECITYCLASSCLOTHESCLOUDCOASTCOLORCOMPANYCONSONANTCODYCORNCOTTONCOUNTRYCOURSECOWCROWDDAYDICTIONARYDIRECTIONDISTANCEDOCTORDOLLARDOOREAREARTHEGGENERGYEXAMPLEEXPERIENCEEYEGAMEGARDENGASGIRLGLASSGOLDGOVERNMENTGRASSGROUPHAIRHANDHATHEADHEARTHEATHISTORYHOLEHOMEHORSEHOURHOUSEICEIDEAINCHINDUSTRYINFORMATIONINSECTINTERESTIRONISLANDJOBKEYLAKELANDLANGUAGELAWLEGLEVELLIELIFELIGHTLINELISTMACHINEMANMAPMATERIALMEATMIDDLEMILEMILKMINDMINUTEMONEYMONTHMOONMOUTHMUSICNATIONNIGHTNOSENOTENUMBEROBJECTOCEANOFFICEOILPAGEPAIRPAPERPARAGRAPHPARKPARTPARTYPASTPOSTPERSONPOUNDPRESIDENTPROBLEMPRODUCTPROPERTYQUESTIONRACERADIORAINREASONRECORDREGIONRINGRIVERROADROCKROWRULESANDSCHOOLSCIENCESEASEATSECONDSENTENCESETSIDESIGNSISTERSIZESKINSNOWSOLDIERSOLUTIONSONSPRINGSQUARESTARSTATESTOPSTREETSTUDENTSUGARSUNVILLAGEVOWELWARWEATHERWEIGHTWIFEWINDOWWINTERWOMANWORDWORLDYEARACCOUNTALGORITHMAPPLICATIONEXPLORERBACKUPBROWSERBUGCLIENTCLOUDCODECOMMANDCOMPUTERCONNECTIONDATADATABASESQLDOWNLOADERRORFILELINUXFIREWALLFOLDERFUNCTIONHARDWAREINTERNETDISKKEYBOARDLOGINWINDOWSMEMORYMONITORMOUSENETWORKMACINTOSHPASSWORDPROCESSORPROGRAMPROGRAMMINGSCREENSECURITYSERVERSOFTWARECOMPILERSTORAGEUPDATEUPLOADUSERNAMEVARIABLEVIRUSWEBSITEHANGMANJAVAPYTHONRUST"
 
-LAST                            ; End of the entire program
+LAST         ; End of the entire program
 
 .ENDLOGICAL
