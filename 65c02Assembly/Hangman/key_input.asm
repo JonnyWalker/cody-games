@@ -201,7 +201,7 @@ _NEXT_KEY20
         LSR A
         AND #%10000
         BNE _NEXT_KEY21
-        LDA #$00 ; TODO: support SPACE
+        LDA #$20 ; SPACE
         RTS
 _NEXT_KEY21
         LDA VIA_IORA        
