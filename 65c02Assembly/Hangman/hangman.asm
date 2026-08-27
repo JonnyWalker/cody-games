@@ -13,7 +13,6 @@ SECRET_WORD = $D7       ; start of secrect word, will be filled later
 ; CONSTANTS: where to print and other stuff
 WORD_PRINT_START = $C478
 LETTER_PRINT_START = $C4AA
-MESSAGE_PRINT_START = $C4C8
 BLANK_CHAR = #$00
 MAX_MISTAKES = #$05
 
@@ -25,6 +24,17 @@ MAX_MISTAKES = #$05
 ; The actual program.
 
 .LOGICAL    ADDR                ; The actual program gets loaded at ADDR
+
+; print text of length at (row, column)
+PRINT .macro text, column, row, length
+    LDX #0
+ _Print_Text
+    LDA \text, X
+    STA 50176+\column+\row*40, X  ;50176=$C400
+    INX
+    CPX #\length
+    BNE _Print_Text
+    .endmacro
       
 MAIN                            ; The program starts running from here
             LDA #$E2            ; Set border color (Bits 0-3) to red=2 
@@ -43,30 +53,15 @@ _TITLE_SCREEN
             LDA #$2C            ; clear with red=2 and gray=C 
             JSR CLEAR_SCREEN    ; replace all characters with empty character
 
-            LDX #0
-    _Print_Text4
-            LDA Text4, X
-            STA $C428, X  
-            INX
-            CPX #7
-            BNE _Print_Text4
-
-            LDX #0
-    _Print_Text5
-            LDA Text5, X
-            STA $C450, X  
-            INX
-            CPX #31
-            BNE _Print_Text5
+            ; prints "HANGMAN"
+            #PRINT Text4, 0, 1, 7
+            ; prints "GUESS A WORD BY TYPING LETTERS."
+            #PRINT Text5, 0, 2, 31
 
  _NEXT_GAME ; game loop jumps back here after game end
-            LDX #0
-    _Print_Text6
-            LDA Text6, X
-            STA $C798, X  
-            INX
-            CPX #24
-            BNE _Print_Text6
+            
+            ; prints "PRESS SPACE TO CONTINUE."
+            #PRINT Text6, 0, 23, 24
 
     _WAIT_FOR_SPACE
             ; compute random value between 0 and 255
@@ -115,23 +110,11 @@ _NEW_GAME
             LDA #$2C            ; clear with red=2 and gray=C 
             JSR CLEAR_SCREEN    ; replace all characters with empty character
 
-            ; prints string in 'Text0'
-            LDX #0
- _Print_Word_Len_Text 
-            LDA Text0, X
-            STA $C428, X  
-            INX
-            CPX #9
-            BNE _Print_Word_Len_Text
+            ; prints "WORD LEN:"
+            #PRINT Text0, 0, 1, 9
 
-            ; prints string in 'Text1'
-            LDX #0
- _Print_Tried_Text
-            LDA Text1, X
-            STA $C4A0, X  
-            INX
-            CPX #10
-            BNE _Print_Tried_Text
+            ; prints "YOU TRIED:"
+            #PRINT Text1, 0, 4, 10
 
             ; First letter will be printed $C484+CURSOR_X (see below)
             LDA #$01
@@ -212,7 +195,7 @@ _GAME_LOOP
         LDA BLANK_CHAR
         CMP WORD_PRINT_START, X
         BNE _NO_BLANK
-        LDY #$00 ; Y = false = not won
+        LDY #$00 ; Blank Char found: Y = false = not won
  _NO_BLANK
         INX 
         CPX SECRET_WORD_LEN
@@ -222,37 +205,27 @@ _GAME_LOOP
         CPY #$00
         BEQ _NOT_WON
 
-        ; print won text
-        LDX #0
- _Print_Won_Text
-        LDA Text2, X
-        STA MESSAGE_PRINT_START, X  
-        INX
-        CPX #8
-        BNE _Print_Won_Text
+        ; prints "YOU WON!"
+        #PRINT Text2, 0, 5, 8
+
         JMP _NEXT_GAME
 
  _NOT_WON        
         JMP _GAME_LOOP
         
  _LETTER_NOT_IN_WORD
-        ; new letter and not in word
+        ; new letter and not in word: WRONG_LETTERS++
         LDA WRONG_LETTERS
         INC A
         STA WRONG_LETTERS
 
-        ; check game over state
+        ; check game over state: WRONG_LETTERS==MAX_MISTAKES
         CMP MAX_MISTAKES
         BNE _NOT_GAME_OVER
 
-        ; print game over text
-        LDX #0
- _Print_Gameover_Text
-        LDA Text3, X
-        STA MESSAGE_PRINT_START, X  
-        INX
-        CPX #9
-        BNE _Print_Gameover_Text
+        ; prints "YOU LOSE!"
+        #PRINT Text3, 0, 5, 9
+
         JMP _NEXT_GAME
 
  _NOT_GAME_OVER
