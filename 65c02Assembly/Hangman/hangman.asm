@@ -30,7 +30,7 @@ PRINT .macro text, column, row, length
     LDX #0
  _Print_Text
     LDA \text, X
-    STA 50176+\column+\row*40, X  ;50176=$C400
+    STA 50176+\column+\row*40, X  ;50176=$C400, 40 characters each row
     INX
     CPX #\length
     BNE _Print_Text
@@ -143,6 +143,7 @@ _NEW_GAME
 _GAME_LOOP
         ; TODO: wait blank and draw hangman according to WRONG_LETTERS
         JSR WAITBLANK
+        JSR DRAW_HANGMAN
 
         JSR KEY_TO_A
         BEQ _GAME_LOOP
@@ -232,9 +233,181 @@ _GAME_LOOP
 
  _NOT_GAME_OVER
 
-
  _NO_NEW_LETTER_ENTERED
         JMP _GAME_LOOP           ; End of main game loop    
+
+DRAW_HANGMAN
+        ; more than 0 WRONG_LETTERS: draw gallows in brown 9C 
+        LDA #$86
+        STA $C7AC
+        LDA #$9C
+        STA $DBAC
+        LDA #$B4
+        STA $C7AD
+        LDA #$9C
+        STA $DBAD
+        LDX #$00
+    _DRAW_H_LINE
+        LDA #$86
+        STA $C7AE,X
+        LDA #$9C
+        STA $DBAE,X 
+        INX
+        CPX #$08
+        BNE _DRAW_H_LINE
+    
+        ; more than 1 WRONG_LETTERS
+        LDA #$9C
+        STA $c5cd
+        STA $c5f5
+        STA $c61d
+        STA $c645
+        STA $c66d
+        STA $c695
+        STA $c6bd
+        STA $c6e5
+        STA $c70d
+        STA $c735
+        STA $c75d
+        STA $c785
+        STA $d9cd
+        STA $d9f5
+        STA $da1d
+        STA $da45
+        STA $da6d
+        STA $da95
+        STA $dabd
+        STA $dae5
+        STA $db0d
+        STA $db35
+        STA $db5d
+        STA $db85
+
+        ; more than 2 WRONG_LETTERS
+        LDA #$9E
+        STA $c5a5
+        LDA #$9C
+        STA $D9A5 
+
+        LDX #$00
+    _DRAW_H_LINE2
+        LDA #$86
+        STA $c5a6,X
+        LDA #$9C
+        STA $D9A6,X 
+        INX
+        CPX #$04
+        BNE _DRAW_H_LINE2
+
+        LDA #$9E
+        STA $c5aA
+        LDA #$9C
+        STA $D9AA
+
+        LDX #$00
+    _DRAW_H_LINE3
+        LDA #$86
+        STA $c5aB,X
+        LDA #$9C
+        STA $D9AB,X 
+        INX
+        CPX #$03
+        BNE _DRAW_H_LINE3
+
+        LDA #$9C
+        STA $c5d2
+        STA $D9D2
+        STA $c5FA
+        STA $D9FA
+
+        ; more than 3 WRONG_LETTERS: draw head in light red $AC
+        LDA #$98
+        STA $c621
+        LDA #$AC
+        STA $DA21
+        LDA #$86
+        STA $c622
+        LDA #$AC
+        STA $DA22
+        LDA #$8C
+        STA $c623
+        LDA #$AC
+        STA $DA23
+        LDA #$97
+        STA $c649
+        LDA #$AC
+        STA $DA49   
+        LDA #$AA
+        STA $c64B
+        LDA #$AC
+        STA $DA4B
+        LDA #$97
+        STA $c671
+        LDA #$AC
+        STA $DA71  
+        LDA #$AA
+        STA $c673
+        LDA #$AC
+        STA $DA73
+        LDA #$8D
+        STA $c699
+        LDA #$AC
+        STA $DA99
+        LDA #$86
+        STA $c69A
+        LDA #$AC
+        STA $DA9A
+        LDA #$8E
+        STA $c69B
+        LDA #$AC
+        STA $DA9B
+
+        ; more than 4 WRONG_LETTERS: draw body in black $9C
+        LDA #$91
+        STA $c6c1
+        LDA #$0C
+        STA $DAC1
+        LDA #$9C
+        STA $c6c2
+        LDA #$0C
+        STA $DAC2
+        LDA #$90
+        STA $c6c3
+        LDA #$0C
+        STA $DAC3
+        LDA #$9C
+        STA $c6ea
+        LDA #$0C
+        STA $DAEA
+        LDA #$90
+        LDA #$91
+        STA $c711
+        LDA #$0C
+        STA $DB11
+        LDA #$90
+        STA $c713
+        LDA #$0C
+        STA $DB13
+
+        ; more than 5 WRONG_LETTERS: change eyes and color to green ($5C)
+        LDA #$78
+        STA $c64A
+        STA $c64B
+        LDA #$5C
+        STA $DA21
+        STA $DA22
+        STA $DA23
+        STA $DA49
+        STA $DA4A
+        STA $DA4B
+        STA $DA71  
+        STA $DA73
+        STA $DA99
+        STA $DA9A
+        STA $DA9B
+
+    _END_OF_DRAW
+        RTS
 
 .include "graphics.asm"
 .include "key_input.asm"
