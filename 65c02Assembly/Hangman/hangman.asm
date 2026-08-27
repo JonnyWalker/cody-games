@@ -141,7 +141,9 @@ _NEW_GAME
             STA $C432
 
 _GAME_LOOP
-        ; TODO: wait blank and draw hangman according to WRONG_LETTERS     
+        ; TODO: wait blank and draw hangman according to WRONG_LETTERS
+        JSR WAITBLANK
+
         JSR KEY_TO_A
         BEQ _GAME_LOOP
         CMP #$20        ; SPACE KEY

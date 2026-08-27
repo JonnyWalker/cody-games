@@ -81,3 +81,14 @@ _COPYCHAR7
         INX
         BEQ _COPYCHAR7 ; use overflow
         RTS
+
+WAITBLANK
+_WAITVIS
+    ; Wait until the blanking is zero (drawing the screen)
+    LDA VID_BLNK
+    BNE _WAITVIS
+_WAITBLANK
+    ; Wait until the blanking is one (not drawing the screen)
+    LDA VID_BLNK
+    BEQ _WAITBLANK
+    RTS

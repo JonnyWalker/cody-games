@@ -3,19 +3,20 @@
 ; SCREEN MEM at $C400 
 ; COLOR MEM at $D800
 ; tile 0 is "empty tile"
+; A contains coloer (e.g. #$00 )
 CLEAR_SCREEN
 ; set characters from $C400 to $C500 to empty tile
         LDX #0              
 _EMPTY0
         STZ $C400,X
-        STZ $D800,X ;0=black
+        STA $D800,X 
         INX
         BNE _EMPTY0
 ; set characters from $C500 to $C600 to empty tile
         LDX #0              
 _EMPTY1
         STZ $C500,X
-        STZ $D900,X ;0=black
+        STA $D900,X 
         INX
         BNE _EMPTY1
 
@@ -23,14 +24,14 @@ _EMPTY1
         LDX #0              
 _EMPTY2
         STZ $C600,X
-        STZ $DA00,X ;0=black
+        STA $DA00,X 
         INX
         BNE _EMPTY2
 ; set characters from $C700 to $C800 to empty tile
         LDX #0              
 _EMPTY3
         STZ $C700,X
-        STZ $DB00,X ;0=black
+        STA $DB00,X 
         INX
         BNE _EMPTY3
         RTS
@@ -80,3 +81,14 @@ _COPYCHAR7
         INX
         BEQ _COPYCHAR7 ; use overflow
         RTS
+
+WAITBLANK
+_WAITVIS
+    ; Wait until the blanking is zero (drawing the screen)
+    LDA VID_BLNK
+    BNE _WAITVIS
+_WAITBLANK
+    ; Wait until the blanking is one (not drawing the screen)
+    LDA VID_BLNK
+    BEQ _WAITBLANK
+    RTS
