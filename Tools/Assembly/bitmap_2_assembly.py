@@ -27,7 +27,7 @@ COLOR_MAP = {x:i for i, x in enumerate(COMPATIBLE_COLORS)}
 tile_conter = 0 
 
 # edit those line
-FILE = "tiles/pitaya.bmp"
+FILE = "tiles/Banana.bmp"
 SHARED_COLOR11 = BLACK
 SHARED_COLOR10 = WHITE
 
@@ -123,13 +123,12 @@ def compute_pixels_and_color(x1,x2,y1,y2):
     return pixel_data, color_data
 
 color_list = []
-for j in range(width//8):
+for j in range(height//8):
     color_row = []
     for i in range(width//4):
         pixel_data, color_data = compute_pixels_and_color(i*4,i*4+4,j*8,j*8+8)
         color_row.append(color_data)
         print(pixel_data)
-        color_row.append(color_data)
     color_list.append(color_row)
 
 # print color data
