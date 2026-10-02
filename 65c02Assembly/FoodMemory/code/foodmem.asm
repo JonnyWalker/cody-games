@@ -40,10 +40,11 @@ MAIN                    ; The program starts running from here
     LDA #$01            ; Store shared colors (black=0 and white=1)
     STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm) 
 
-    JSR LOAD_CODSCII_TO_CHAR_MEM
-
 ; show title screen, compute random value and wait for space key
 _TITLE_SCREEN
+    ; overwrites all other graphics
+    JSR LOAD_CODSCII_TO_CHAR_MEM
+
     ; clear with white=1 and black=0 
     LDA #$10
     ; replace all characters with empty character            
@@ -70,6 +71,53 @@ _NEW_GAME
     LDA #$10
     ; replace all characters with empty character            
     JSR CLEAR_SCREEN 
+
+    ; load food graphics, overwrite cody character data
+    LDX #0         
+ _COPYCHAR   
+    LDA CHARDATA,X
+    STA $C900,X
+    INX
+    CPX #128          ; copy 16*8 Bytes
+    BNE _COPYCHAR
+
+    ; copy colors to color memory (only test)
+    ; TODO: compute correct location in draw subroutine
+    LDX #0              
+ _COPYCOLOR  
+    LDA COLOR_DATA,X   
+    STA $D800,X
+    STA $D8B4,X    
+    INX
+    CPX #4
+    BNE _COPYCOLOR
+
+    LDX #4           
+ _COPYCOLOR2  
+    LDA COLOR_DATA,X   
+    STA $D824,X
+    STA $D8D8,X    
+    INX
+    CPX #8
+    BNE _COPYCOLOR2
+
+    LDX #8           
+ _COPYCOLOR3  
+    LDA COLOR_DATA,X   
+    STA $D848,X
+    STA $D8FC,X    
+    INX
+    CPX #12
+    BNE _COPYCOLOR3
+
+    LDX #12           
+ _COPYCOLOR4  
+    LDA COLOR_DATA,X   
+    STA $D86C,X
+    STA $D920,X    
+    INX
+    CPX #16
+    BNE _COPYCOLOR4
 
     ; draw open cards
     JSR TEST_DRAW
@@ -217,9 +265,158 @@ TEST_DRAW
     ; all cards have been drawn
 
     RTS
-
 .include "graphics.asm"
 .include "key_input.asm"
+
+CHARDATA ; 10=white, 11=black
+  .BYTE %11111111 ; Apple 
+  .BYTE %11111111
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+
+  .BYTE %11111111 ; Apple 
+  .BYTE %11111111
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+
+  .BYTE %11111111 ; Apple 
+  .BYTE %11111111
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10001010
+  .BYTE %00001010
+  .BYTE %00101010
+
+  .BYTE %11111111 ; Apple 
+  .BYTE %11111111
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+
+  .BYTE %11101010 ; Apple row 2
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101001
+  .BYTE %11101001
+  .BYTE %11101001
+  .BYTE %11101001
+
+  .BYTE %10101001 ; Apple 
+  .BYTE %10010101
+  .BYTE %01010101
+  .BYTE %01100101
+  .BYTE %10010101
+  .BYTE %01010101
+  .BYTE %10010101
+  .BYTE %10010101
+
+  .BYTE %00011010 ; Apple 
+  .BYTE %00010110
+  .BYTE %00010101
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01010101
+
+  .BYTE %10101011 ; Apple 
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %00101011
+  .BYTE %00101011
+  .BYTE %00101011
+  .BYTE %00101011
+
+  .BYTE %11101001 ; Apple row 3
+  .BYTE %11101001
+  .BYTE %11101001
+  .BYTE %11101001
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+
+  .BYTE %01010101 ; Apple
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %10010101
+
+  .BYTE %01010101 ; Apple
+  .BYTE %01010100
+  .BYTE %01010100
+  .BYTE %01010100
+  .BYTE %01010001
+  .BYTE %01010101
+  .BYTE %01010101
+  .BYTE %01010101
+
+  .BYTE %00101011 ; Apple 
+  .BYTE %00101011
+  .BYTE %01101011
+  .BYTE %01101011
+  .BYTE %01101011
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+
+  .BYTE %11101010 ; Apple row 4
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11101010
+  .BYTE %11111111
+  .BYTE %11111111  
+
+  .BYTE %10100101 ; Apple 
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %11111111
+  .BYTE %11111111  
+
+  .BYTE %01010110 ; Apple 
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %10101010
+  .BYTE %11111111
+  .BYTE %11111111  
+
+  .BYTE %10101011 ; Apple 
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %10101011
+  .BYTE %11111111
+  .BYTE %11111111 
+
+
+COLOR_DATA
+  ; Apple colors (brown/green/yellow=00, red=01)
+  .BYTE $29, $29, $29, $29, $29, $29, $29, $25, $29, $29, $27, $25, $29, $29, $29, $29
 
 Text0 .TEXT "Food Memory"
 Text1 .TEXT "PRESS SPACE TO CONTINUE."
