@@ -7,18 +7,14 @@ SCREEN_PTR    = $D2      ; 16-Bit variable
 COLOR_PTR     = $D4      ; 16-Bit variable
 ROW_COUNTER   = $D6      ; 0-5: used to check if one row has been drawn
 
-
-
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
 
 ; Program header for Cody Basic's loader (needs to be first)
-
 .WORD ADDR                      ; Starting address (just like KIM-1, Commodore, etc.)
 .WORD (ADDR + LAST - MAIN - 1)  ; Ending address (so we know when we're done loading)
 
 ; The actual program.
-
 .LOGICAL    ADDR                ; The actual program gets loaded at ADDR
 
 ; print text of length at (row, column)
@@ -74,24 +70,27 @@ _NEW_GAME
     ; replace all characters with empty character            
     JSR CLEAR_SCREEN 
 
-    ; load food graphics, overwrite cody character data
+    ; load food graphics, overwrite cody character data from title screen
     LDX #0         
  _COPYCHAR   
-    LDA CHARDATA,X
-    STA $C900,X ; TODO: use $C800 when cody basic characters are removed
+    LDA CHARDATA1,X
+    STA $C800,X 
     LDA CHARDATA2,X
-    STA $CA00,X
+    STA $C900,X
     LDA CHARDATA3,X
-    STA $CB00,X
+    STA $CA00,X
     LDA CHARDATA4,X
-    STA $CC00,X
+    STA $CB00,X
     LDA CHARDATA5,X
-    STA $CD00,X
+    STA $CC00,X
     LDA CHARDATA6,X
+    STA $CD00,X
+    LDA CHARDATA7,X
     STA $CE00,X
-    INX  
-    BNE _COPYCHAR ; copy 32*8 Bytes, use overflow to copy 256
-
+    INX
+    ; copy character bytes, use X overflow to copy 7*256 ~= 1.75K of memory  
+    BNE _COPYCHAR 
+    
     ; draw open cards
     JSR TEST_DRAW
 
@@ -100,7 +99,7 @@ JMP _GAME_LOOP
 
 ; helper for subroutine TEST_DRAW
 DRAW_TILE
-    ; data * 16 + TILE_COUNTER (each card is 4x4=16 tiles)
+    ; pixel = LEVEL[X] * 16 + TILE_COUNTER (each card is 4x4=16 tiles)
     LDA LEVEL, X
     ASL
     ASL
@@ -108,15 +107,13 @@ DRAW_TILE
     ASL
     CLC 
     ADC TILE_COUNTER
-    ; FIXME: only temporary: use characters from cody basic until graphics are ready
-    CLC
-    ADC #$10
 
+    ; SCREEN_PTR[A] = pixel
     ; draw pixel pattern
     STA (SCREEN_PTR)
 
     ; compute color of current tile
-    ; color = COLOR_DATA[data * 16 + TILE_COUNTER]
+    ; color = COLOR_DATA[LEVEL[X] * 16 + TILE_COUNTER]  (each card is 4x4=16 tiles)
     LDA LEVEL, X
     ASL
     ASL
@@ -129,7 +126,8 @@ DRAW_TILE
     LDA COLOR_DATA, X
     PLX
     
-    ; set color for this tile TODO
+    ; COLOR_PTR[A] = color
+    ; set color for this tile 
     STA (COLOR_PTR)
 
     ; SCREEN_PTR++
@@ -158,6 +156,7 @@ DRAW_TILE
     RTS
 
 ; TILE_COUNTER: from 0-15. Index in 4x4 (=16) tiles card image
+; used to compute pixels and color
 TEST_DRAW
     ; SCREEN_PTR = $C400
     LDA #$00
@@ -183,14 +182,14 @@ TEST_DRAW
 
   ; This loop draws all 6x4 cards of 4x4 tiles each
   _ALL_ROWS
-  ; This loop draws one row of cards 4*6x4 tiles each
+  ; This loop draws one row of cards 6*4x4 tiles each
   _FOUR_ROWS
     LDA #$00
     STA ROW_COUNTER
   ; This loop draws one row of 4*6 tiles
   _ROW
     ; Draw four tiles (of one card)
-    ; notice the side-effects on the variables
+    ; notice the side-effects on the variables in the subroutine
     JSR DRAW_TILE
     JSR DRAW_TILE
     JSR DRAW_TILE
@@ -202,7 +201,7 @@ TEST_DRAW
     ADC #$01
     STA ROW_COUNTER
 
-    ; TILE_COUNTER = TILE_COUNTER - 4  (next tile in row starts )
+    ; TILE_COUNTER = TILE_COUNTER - 4  (next tile in row starts)
     LDA TILE_COUNTER
     SEC 
     SBC #$04
@@ -270,7 +269,7 @@ TEST_DRAW
     LDA #$00
     STA TILE_COUNTER
 
-    ;Y==16? (4 card rows == 16 tile rows)
+    ; Y==16? (4 card rows == 16 tile rows)
     CPY #16
     BEQ _END_DRAW
     JMP _ALL_ROWS
@@ -281,7 +280,151 @@ TEST_DRAW
 .include "graphics.asm"
 .include "key_input.asm"
 
-CHARDATA ; 10=white, 11=black
+CHARDATA1 ; 10=white, 11=black
+  .BYTE %00000000 ; card back row 0 (TODO)
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 ; card back row 1 (TODO)
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 ; card back row 2 (TODO)
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 ; card back row 3 (TODO)
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
   .BYTE %11111111 ; apple row 0
   .BYTE %11111111
   .BYTE %11101010
@@ -426,6 +569,7 @@ CHARDATA ; 10=white, 11=black
   .BYTE %11111111
   .BYTE %11111111 
 
+CHARDATA2
 
   .BYTE %11111111 ; banana row 0
   .BYTE %11111111
@@ -571,8 +715,6 @@ CHARDATA ; 10=white, 11=black
   .BYTE %11111111
   .BYTE %11111111
 
-CHARDATA2
-
   .BYTE %11111111 ; strawberry row 0
   .BYTE %11111111
   .BYTE %11101010
@@ -716,6 +858,8 @@ CHARDATA2
   .BYTE %10101011
   .BYTE %11111111
   .BYTE %11111111
+
+CHARDATA3
 
   .BYTE %11111111 ; grape row 0
   .BYTE %11111111
@@ -861,7 +1005,6 @@ CHARDATA2
   .BYTE %11111111
   .BYTE %11111111
 
-CHARDATA3
   .BYTE %11111111 ; pineapple row 0
   .BYTE %11111111
   .BYTE %11101010
@@ -1005,6 +1148,8 @@ CHARDATA3
   .BYTE %10101011
   .BYTE %11111111
   .BYTE %11111111
+
+CHARDATA4
 
   .BYTE %11111111 ; lemon row 0
   .BYTE %11111111
@@ -1150,7 +1295,6 @@ CHARDATA3
   .BYTE %11111111
   .BYTE %11111111
 
-CHARDATA4
   .BYTE %11111111 ; melon row 0
   .BYTE %11111111
   .BYTE %11101010
@@ -1294,6 +1438,8 @@ CHARDATA4
   .BYTE %10101011
   .BYTE %11111111
   .BYTE %11111111
+
+CHARDATA5
 
   .BYTE %11111111 ; cherry row 0
   .BYTE %11111111
@@ -1439,7 +1585,6 @@ CHARDATA4
   .BYTE %11111111
   .BYTE %11111111
 
-CHARDATA5
   .BYTE %11111111 ; pear row 0
   .BYTE %11111111
   .BYTE %11101010
@@ -1583,6 +1728,8 @@ CHARDATA5
   .BYTE %10101011
   .BYTE %11111111
   .BYTE %11111111
+
+CHARDATA6
 
   .BYTE %11111111 ; kiwi row 0
   .BYTE %11111111
@@ -1728,7 +1875,6 @@ CHARDATA5
   .BYTE %11111111
   .BYTE %11111111
 
-CHARDATA6
   .BYTE %11111111 ; raspberry row 0
   .BYTE %11111111
   .BYTE %11101010
@@ -1873,6 +2019,8 @@ CHARDATA6
   .BYTE %11111111
   .BYTE %11111111
 
+CHARDATA7
+
   .BYTE %11111111 ; plum row0
   .BYTE %11111111
   .BYTE %11101010
@@ -2016,6 +2164,150 @@ CHARDATA6
   .BYTE %10101011
   .BYTE %11111111
   .BYTE %11111111
+
+  .BYTE %00000000 ; empty row 0 (TODO)
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 ; empty row 1 (TODO)
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 ; empty row 2 (TODO)
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 ; empty row 3 (TODO)
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+
+  .BYTE %00000000 
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
 
 COLOR_DATA
   ; Back of cards
