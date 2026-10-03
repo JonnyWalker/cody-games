@@ -6,6 +6,7 @@ TILE_COUNTER  = $D1      ; 0-15: used to iterate over tiles in test draw
 SCREEN_PTR    = $D2      ; 16-Bit variable
 COLOR_PTR     = $D4      ; 16-Bit variable
 ROW_COUNTER   = $D6      ; 0-5: used to check if one row has been drawn
+LEVEL_PTR     = $D7      ; 16-Bit variable
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
@@ -70,6 +71,13 @@ _NEW_GAME
     ; replace all characters with empty character            
     JSR CLEAR_SCREEN 
 
+    ; TODO: compute random level
+    ; TODO: free Y in subroutine to use this variable (refactoring)
+    LDA #<LEVEL0       
+    STA LEVEL_PTR+0
+    LDA #>LEVEL0
+    STA LEVEL_PTR+1  
+
     ; load food graphics, overwrite cody character data from title screen
     LDX #0         
  _COPYCHAR   
@@ -100,7 +108,7 @@ JMP _GAME_LOOP
 ; helper for subroutine TEST_DRAW
 DRAW_TILE
     ; pixel = LEVEL[X] * 16 + TILE_COUNTER (each card is 4x4=16 tiles)
-    LDA LEVEL, X
+    LDA LEVEL0, X
     ASL
     ASL
     ASL
@@ -114,7 +122,7 @@ DRAW_TILE
 
     ; compute color of current tile
     ; color = COLOR_DATA[LEVEL[X] * 16 + TILE_COUNTER]  (each card is 4x4=16 tiles)
-    LDA LEVEL, X
+    LDA LEVEL0, X
     ASL
     ASL
     ASL
@@ -277,6 +285,7 @@ TEST_DRAW
     ; all cards have been drawn
 
     RTS
+
 .include "graphics.asm"
 .include "key_input.asm"
 
@@ -2340,10 +2349,10 @@ COLOR_DATA
 Text0 .TEXT "Food Memory"
 Text1 .TEXT "PRESS SPACE TO CONTINUE."
 
-LEVEL .BYTE 1,2,3,4,5,6
-      .BYTE 6,5,4,3,2,1
-      .BYTE 7,8,9,10,11,12
-      .BYTE 7,8,9,10,11,12
+LEVEL0 .BYTE 1,2,3,4,5,6
+       .BYTE 6,5,4,3,2,1
+       .BYTE 7,8,9,10,11,12
+       .BYTE 7,8,9,10,11,12
 
 LAST         ; End of the entire program
 

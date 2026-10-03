@@ -11,7 +11,7 @@ TODO
 
 # Author
 
-John Witulski
+John Witulski, Timo Mauerer
 
 # Run (Emulation)
 Run using  [Cody Computer Emulator](https://github.com/iTitus/cody_emulator):
