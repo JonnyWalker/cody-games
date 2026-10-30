@@ -82,6 +82,9 @@ for y in range(height):
             print("Error. Illegal color ",color, " at ", (x,y))
             exit(0)
 
+
+global_counter = -1
+
 # [x1,x2[ and [y1,y2[
 def compute_pixels_and_color(x1,x2,y1,y2):
     # analyize colors of 4x8 pixel tile
@@ -114,7 +117,11 @@ def compute_pixels_and_color(x1,x2,y1,y2):
         color_mapping.update({other_colors[0]:"00"})
 
     # now compute pixel data
-    pixel_data = ";"+str(tile_conter)+"\n" # assembly comment to find tiles
+    global global_counter
+    global_counter += 1
+    if global_counter % 16 == 0:
+        print(f"\nCHARDATA{global_counter//16}")
+    pixel_data = ";"+str(tile_conter)+f";{global_counter}\n" # assembly comment to find tiles
     tile_conter+=1
     for y in range(y1, y2):
         pixel_data += ".BYTE %"
@@ -144,6 +151,8 @@ def compute_pixels_and_color(x1,x2,y1,y2):
 
     return pixel_data, color_data
 
+
+
 color_list = []
 for j in range(height//8):
     color_row = []
@@ -154,10 +163,13 @@ for j in range(height//8):
     color_list.append(color_row)
 
 # print color data
+
+
+
+
 for color_row in color_list:
     color_data = ".BYTE "
     for cd in color_row[:-1]:
         color_data += cd+","
     color_data+= color_row[-1]
     print(color_data)
-
