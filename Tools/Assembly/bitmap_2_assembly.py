@@ -46,7 +46,7 @@ COMPATIBLE_COLORS = [BLACK, WHITE, RED, CYAN,
                      ORANGE, BROWN, LIGHT_RED, DARK_GRAY,
                      GRAY, LIGHT_GREEN, LIGHT_BLUE, LIGHT_GRAY]
 COLOR_MAP = {x:i for i, x in enumerate(COMPATIBLE_COLORS)}
-tile_conter = 0
+tile_counter = 0
 
 # edit those line
 FILE = sys.argv[1]
@@ -82,16 +82,13 @@ for y in range(height):
             print("Error. Illegal color ",color, " at ", (x,y))
             exit(0)
 
-
-global_counter = -1
-
 # [x1,x2[ and [y1,y2[
 def compute_pixels_and_color(x1,x2,y1,y2):
     # analyize colors of 4x8 pixel tile
     # and compute color mapping of pixels
     assert (x2-x1) == 4
     assert (y2-y1) == 8
-    global tile_conter
+    global tile_counter
     used_colors = set()
     for y in range(y1, y2):
         for x in range(x1, x2):
@@ -117,12 +114,10 @@ def compute_pixels_and_color(x1,x2,y1,y2):
         color_mapping.update({other_colors[0]:"00"})
 
     # now compute pixel data
-    global global_counter
-    global_counter += 1
-    if global_counter % 16 == 0:
-        print(f"\nCHARDATA{global_counter//16}")
-    pixel_data = ";"+str(tile_conter)+f";{global_counter}\n" # assembly comment to find tiles
-    tile_conter+=1
+    if tile_counter % 16 == 0:
+        print(f"\nCHARDATA{tile_counter//16}")
+    pixel_data = ";"+str(tile_counter)+"\n" # assembly comment to find tiles
+    tile_counter+=1
     for y in range(y1, y2):
         pixel_data += ".BYTE %"
         for x in range(x1, x2):
@@ -148,10 +143,7 @@ def compute_pixels_and_color(x1,x2,y1,y2):
         value1 = format(COLOR_MAP[SHARED_COLOR11], '1x')  # default
     color_data = "$"+value1+value0
 
-
     return pixel_data, color_data
-
-
 
 color_list = []
 for j in range(height//8):
@@ -163,10 +155,6 @@ for j in range(height//8):
     color_list.append(color_row)
 
 # print color data
-
-
-
-
 for color_row in color_list:
     color_data = ".BYTE "
     for cd in color_row[:-1]:
