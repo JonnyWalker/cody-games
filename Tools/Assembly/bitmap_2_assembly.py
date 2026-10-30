@@ -1,33 +1,55 @@
 # input: a 160x200 pixel bitmap file, only using "cody compatible colors" (see below)
 # output: 65c02 assembly compatible pixel and color bytes
+import sys
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 # define cody compatible colors
-BLACK       = (0,     0,   0, 255)
-WHITE       = (255, 255, 255, 255) 
-RED         = (255,   0,   0, 255) 
-CYAN        = (0,   255, 255, 255)
-PURPLE      = (128,   0, 128, 255)
-GREEN       = (0,   255,   0, 255)
-BLUE        = (0,     0, 255, 255)
-YELLOW      = (255, 255,   0, 255)
-ORANGE      = (224, 160,   0, 255)
-BROWN       = (128,  96,  64, 255)
-LIGHT_RED   = (224, 192, 128, 255)
-DARK_GRAY   = (96,   96,  96, 255)
-GRAY        = (128, 128, 128, 255)
-LIGHT_GREEN = (160, 224, 128, 255)
-LIGHT_BLUE  = (192, 220, 192, 255)
-LIGHT_GRAY  = (196, 196, 196, 255)
+# bad colors
+# BLACK       = (0,     0,   0, 255)
+# WHITE       = (255, 255, 255, 255)
+# RED         = (255,   0,   0, 255)
+# CYAN        = (0,   255, 255, 255)
+# PURPLE      = (128,   0, 128, 255)
+# GREEN       = (0,   255,   0, 255)
+# BLUE        = (0,     0, 255, 255)
+# YELLOW      = (255, 255,   0, 255)
+# ORANGE      = (224, 160,   0, 255)
+# BROWN       = (128,  96,  64, 255)
+# LIGHT_RED   = (224, 192, 128, 255)
+# DARK_GRAY   = (96,   96,  96, 255)
+# GRAY        = (128, 128, 128, 255)
+# LIGHT_GREEN = (160, 224, 128, 255)
+# LIGHT_BLUE  = (192, 220, 192, 255)
+# LIGHT_GRAY  = (196, 196, 196, 255)
+
+BLACK       = (0x00, 0x00, 0x00, 0xff)
+WHITE       = (0xff, 0xff, 0xff, 0xff)
+RED         = (0xcc, 0x00, 0x00, 0xff)
+GREEN       = (0x33, 0xff, 0x66, 0xff)
+BLUE        = (0x0d, 0x00, 0x66, 0xff)
+YELLOW      = (0xff, 0xe6, 0x99, 0xff)
+PURPLE      = (0xcc, 0x00, 0x99, 0xff)
+CYAN        = (0x99, 0xff, 0xd9, 0xff)
+ORANGE      = (0xff, 0xbf, 0x99, 0xff)
+BROWN       = (0xcc, 0x4d, 0x00, 0xff)
+GRAY        = (0x99, 0x99, 0x99, 0xff)
+LIGHT_GRAY  = (0xcc, 0xcc, 0xcc, 0xff)
+DARK_GRAY   = (0x66, 0x66, 0x66, 0xff)
+LIGHT_RED   = (0xff, 0x99, 0x99, 0xff)
+LIGHT_GREEN = (0x99, 0xff, 0xb3, 0xff)
+LIGHT_BLUE  = (0xa6, 0x99, 0xff, 0xff)
+
 COMPATIBLE_COLORS = [BLACK, WHITE, RED, CYAN,
                      PURPLE, GREEN, BLUE, YELLOW,
                      ORANGE, BROWN, LIGHT_RED, DARK_GRAY,
                      GRAY, LIGHT_GREEN, LIGHT_BLUE, LIGHT_GRAY]
 COLOR_MAP = {x:i for i, x in enumerate(COMPATIBLE_COLORS)}
-tile_conter = 0 
+tile_conter = 0
 
 # edit those line
-FILE = "tiles/Banana.bmp"
+FILE = sys.argv[1]
 SHARED_COLOR11 = BLACK
 SHARED_COLOR10 = WHITE
 
@@ -62,7 +84,7 @@ for y in range(height):
 
 # [x1,x2[ and [y1,y2[
 def compute_pixels_and_color(x1,x2,y1,y2):
-    # analyize colors of 4x8 pixel tile 
+    # analyize colors of 4x8 pixel tile
     # and compute color mapping of pixels
     assert (x2-x1) == 4
     assert (y2-y1) == 8
@@ -108,7 +130,7 @@ def compute_pixels_and_color(x1,x2,y1,y2):
     if len(other_colors) == 2:
         value0 = format(COLOR_MAP[other_colors[0]], '1x')
         value1 = format(COLOR_MAP[other_colors[1]], '1x')
-        
+
     elif len(other_colors) == 1:
         value0 = format(COLOR_MAP[other_colors[0]], '1x')
         value1 = format(COLOR_MAP[SHARED_COLOR11], '1x')  # default
@@ -117,7 +139,7 @@ def compute_pixels_and_color(x1,x2,y1,y2):
         assert len(other_colors)==0
         value0 = format(COLOR_MAP[SHARED_COLOR10], '1x')  # default
         value1 = format(COLOR_MAP[SHARED_COLOR11], '1x')  # default
-    color_data = "$"+value1+value0 
+    color_data = "$"+value1+value0
 
 
     return pixel_data, color_data
