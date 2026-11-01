@@ -160,7 +160,7 @@ for j in range(height//8):
 
 # print color data
 for index, color_row in enumerate(color_list):
-    print("; "+debug_labels[index]+" color")
+    print("; "+debug_labels[index//4]+" color")
     color_data = ".BYTE "
     for cd in color_row[:-1]:
         color_data += cd+","

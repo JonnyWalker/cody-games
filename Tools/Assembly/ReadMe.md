@@ -1,6 +1,6 @@
 # Tile Converter
 
-Use `python bitmap_2_assembly.py` to convert a tile set bitmap file to assembly code
+Use `python bitmap_2_assembly.py tiles/Foods/Pitaya.bmp > tileset.asm` to convert a tile set bitmap file to assembly code
 
 ## Limits
 
