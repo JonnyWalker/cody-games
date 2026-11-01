@@ -1,3 +1,5 @@
+; 64tass --mw65c02 --nostart -o foodmem.bin foodmem.asm
+; plink -batch -serial \\.\COMX -sercfg "19200,8,1,n,N" < foodmem.bin
 .include "codyconstants.asm"
 
 ; Zero page variables
