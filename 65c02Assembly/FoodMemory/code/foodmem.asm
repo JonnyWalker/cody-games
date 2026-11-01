@@ -292,7 +292,7 @@ TEST_DRAW
 .include "graphics.asm"
 .include "key_input.asm"
 
-.include "tile_set1.asm"
+.include "tile_set2.asm"
 
 Text0 .TEXT "Food Memory"
 Text1 .TEXT "PRESS SPACE TO CONTINUE."
