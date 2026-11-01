@@ -47,6 +47,8 @@ COMPATIBLE_COLORS = [BLACK, WHITE, RED, CYAN,
                      GRAY, LIGHT_GREEN, LIGHT_BLUE, LIGHT_GRAY]
 COLOR_MAP = {x:i for i, x in enumerate(COMPATIBLE_COLORS)}
 tile_counter = 0
+debug_labels = ["apple", "banana", "strawberry", "grapes", "kiwi", "papaya",
+                "melon", "cherry", "plum", "coconut", "raspberry", "pitaya"]
 
 # edit those line
 FILE = sys.argv[1]
@@ -114,9 +116,11 @@ def compute_pixels_and_color(x1,x2,y1,y2):
         color_mapping.update({other_colors[0]:"00"})
 
     # now compute pixel data
-    if tile_counter % 16 == 0:
-        print(f"\nCHARDATA{tile_counter//16}")
-    pixel_data = ";"+str(tile_counter)+"\n" # assembly comment to find tiles
+    if tile_counter % 32 == 0:
+        print(f"\nCHARDATA{tile_counter//32}")
+    # assembly comment to find tiles
+    pixel_data = "; tile "+str(tile_counter)+"\n"
+    pixel_data += "; "+debug_labels[tile_counter//16]+" "+str(tile_counter%16)+"\n"
     tile_counter+=1
     for y in range(y1, y2):
         pixel_data += ".BYTE %"
@@ -155,7 +159,8 @@ for j in range(height//8):
     color_list.append(color_row)
 
 # print color data
-for color_row in color_list:
+for index, color_row in enumerate(color_list):
+    print("; "+debug_labels[index]+" color")
     color_data = ".BYTE "
     for cd in color_row[:-1]:
         color_data += cd+","
