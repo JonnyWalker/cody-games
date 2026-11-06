@@ -9,7 +9,12 @@ TILE_COUNTER  = $D1      ; 0-15: used to iterate over tiles in test draw
 SCREEN_PTR    = $D2      ; 16-Bit variable
 COLOR_PTR     = $D4      ; 16-Bit variable
 ROW_COUNTER   = $D6      ; 0-5: used to check if one row has been drawn
-LEVEL_PTR     = $D7      ; 16-Bit variable
+LEVEL_PTR16   = $D7      ; 16-Bit variable
+;LEVEL_ARR16   = $D9      ; 16bit Base Address of Level Pointer Address
+CHAR_PTR16    = $DB      ; 16-Bit variable to choose a tile set
+CHAR_MEM_PTR16 = $DD
+COLOR_PTR2    = $DF      ; TODO: usefull comment
+
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
@@ -74,33 +79,186 @@ _NEW_GAME
     ; replace all characters with empty character            
     JSR CLEAR_SCREEN 
 
-    ; TODO: compute random level
+    ; computes random level
     ; TODO: free Y in subroutine to use this variable (refactoring)
-    LDA #<LEVEL0       
-    STA LEVEL_PTR+0
-    LDA #>LEVEL0
-    STA LEVEL_PTR+1  
+    LDA RANDOM_VALUE
+    AND #%0000_0011
 
-    ; load food graphics, overwrite cody character data from title screen
-    LDX #0         
- _COPYCHAR   
-    LDA CHARDATA0,X
-    STA $C800,X 
-    LDA CHARDATA1,X
-    STA $C900,X
-    LDA CHARDATA2,X
-    STA $CA00,X
-    LDA CHARDATA3,X
-    STA $CB00,X
-    LDA CHARDATA4,X
-    STA $CC00,X
-    LDA CHARDATA5,X
-    STA $CD00,X
-    LDA CHARDATA6,X
-    STA $CE00,X
+    ;ASL
+    ;TAX
+    ;LDA $LEVEL_ARR16, X
+    ;STA LEVEL_PTR16+0
+    ;INX
+    ;LDA $LEVEL_ARR16, X
+    ;STA LEVEL_PTR16+1
+    ;JMP _END_OF_LEVEL_LOAD
+
+    CMP #%0000_0000
+    BEQ _LOAD_LEVEL0
+
+    CMP #%0000_0001
+    BEQ _LOAD_LEVEL1
+
+    CMP #%0000_0010
+    BEQ _LOAD_LEVEL2
+
+    CMP #%0000_0011
+    BEQ _LOAD_LEVEL3
+
+ ;_LEVEL_PTR_ARR
+ ;   .WORD LEVEL0
+ ;   .WORD LEVEL1
+ ;   .WORD LEVEL2
+ ;   .WORD LEVEL3
+
+ _LOAD_LEVEL0
+    LDA #<LEVEL0       
+    STA LEVEL_PTR16+0
+    LDA #>LEVEL0
+    STA LEVEL_PTR16+1  
+    JMP _END_OF_LEVEL_LOAD
+  _LOAD_LEVEL1
+    LDA #<LEVEL1       
+    STA LEVEL_PTR16+0
+    LDA #>LEVEL1
+    STA LEVEL_PTR16+1 
+    JMP _END_OF_LEVEL_LOAD
+ _LOAD_LEVEL2
+    LDA #<LEVEL2     
+    STA LEVEL_PTR16+0
+    LDA #>LEVEL2
+    STA LEVEL_PTR16+1
+    JMP _END_OF_LEVEL_LOAD
+ _LOAD_LEVEL3
+    LDA #<LEVEL3       
+    STA LEVEL_PTR16+0
+    LDA #>LEVEL3
+    STA LEVEL_PTR16+1
+    JMP _END_OF_LEVEL_LOAD
+ _END_OF_LEVEL_LOAD
+
+    ; load random food graphics, overwrite cody character data from title screen
+
+    LDA RANDOM_VALUE
+    AND #%1100_0000
+    LSR
+    LSR
+    LSR
+    LSR
+    LSR
+    LSR
+
+    CMP #%0000_0000
+    BEQ _LOAD_TILESET0
+
+    CMP #%0000_0001
+    BEQ _LOAD_TILESET1
+
+    CMP #%0000_0010
+    BEQ _LOAD_TILESET2
+
+    CMP #%0000_0011
+    BEQ _LOAD_TILESET3
+
+ _LOAD_TILESET0
+    LDA #<TILE_SET0
+    STA CHAR_PTR16+0
+    LDA #>TILE_SET0
+    STA CHAR_PTR16+1
+
+    LDA #<COLOR_DATA0
+    STA COLOR_PTR2+0
+    LDA #>COLOR_DATA0
+    STA COLOR_PTR2+1
+    JMP _END_OF_TILESET_LOAD
+  _LOAD_TILESET1
+    LDA #<TILE_SET1
+    STA CHAR_PTR16+0
+    LDA #>TILE_SET1
+    STA CHAR_PTR16+1 
+
+    LDA #<COLOR_DATA1
+    STA COLOR_PTR2+0
+    LDA #>COLOR_DATA1
+    STA COLOR_PTR2+1
+    JMP _END_OF_TILESET_LOAD
+ _LOAD_TILESET2
+    LDA #<TILE_SET2
+    STA CHAR_PTR16+0
+    LDA #>TILE_SET2
+    STA CHAR_PTR16+1 
+
+    LDA #<COLOR_DATA2
+    STA COLOR_PTR2+0
+    LDA #>COLOR_DATA2
+    STA COLOR_PTR2+1
+    JMP _END_OF_TILESET_LOAD
+ _LOAD_TILESET3
+    ; TODO: TIMO neue Grafiken
+    LDA #<TILE_SET2
+    STA CHAR_PTR16+0
+    LDA #>TILE_SET2
+    STA CHAR_PTR16+1 
+
+    LDA #<COLOR_DATA2
+    STA COLOR_PTR2+0
+    LDA #>COLOR_DATA2
+    STA COLOR_PTR2+1
+    JMP _END_OF_TILESET_LOAD
+ _END_OF_TILESET_LOAD
+    
+ 
+    LDA #$00
+    STA CHAR_MEM_PTR16+0
+    LDA #$C8
+    STA CHAR_MEM_PTR16+1
+
+   LDX #0
+ _COPYCHAR_OUTER_LOOP
+    LDY #0
+  _COPYCHAR
+    LDA (CHAR_PTR16),Y
+    STA (CHAR_MEM_PTR16), Y
+
+    INY
+    BNE _COPYCHAR
+
+     ; CHAR_PTR16 += 256
+    LDA CHAR_PTR16+1
+    INC A
+    STA CHAR_PTR16+1
+
+    ; CHAR_MEM_PTR16 += 256
+    LDA CHAR_MEM_PTR16+1
+    INC A
+    STA CHAR_MEM_PTR16+1
+
     INX
-    ; copy character bytes, use X overflow to copy 7*256 ~= 1.75K of memory  
-    BNE _COPYCHAR 
+    CPX #$07
+   BNE _COPYCHAR_OUTER_LOOP
+  
+     
+
+
+;    LDX #0         
+; _COPYCHAR   
+;    LDA CHARDATA0,X
+;    STA $C800,X 
+;    LDA CHARDATA1,X
+;    STA $C900,X
+;    LDA CHARDATA2,X
+;    STA $CA00,X
+;    LDA CHARDATA3,X
+;    STA $CB00,X
+;    LDA CHARDATA4,X
+;    STA $CC00,X
+;    LDA CHARDATA5,X
+;    STA $CD00,X
+;    LDA CHARDATA6,X
+;    STA $CE00,X
+;    INX
+;    ; copy character bytes, use X overflow to copy 7*256 ~= 1.75K of memory  
+;    BNE _COPYCHAR 
     
     ; draw open cards
     JSR TEST_DRAW
@@ -110,8 +268,12 @@ JMP _GAME_LOOP
 
 ; helper for subroutine TEST_DRAW
 DRAW_TILE
+PHY
+PHX
+TXA
+TAY
     ; pixel = LEVEL[X] * 16 + TILE_COUNTER (each card is 4x4=16 tiles)
-    LDA LEVEL0, X
+    LDA (LEVEL_PTR16), Y
     ASL
     ASL
     ASL
@@ -125,17 +287,19 @@ DRAW_TILE
 
     ; compute color of current tile
     ; color = COLOR_DATA[LEVEL[X] * 16 + TILE_COUNTER]  (each card is 4x4=16 tiles)
-    LDA LEVEL0, X
+    LDA (LEVEL_PTR16), Y
     ASL
     ASL
     ASL
     ASL
     CLC 
     ADC TILE_COUNTER
-    PHX
-    TAX
-    LDA COLOR_DATA, X
-    PLX
+    PHY
+    TAY
+
+    ; TODO: use pointer and set pointer in setup according to random value
+    LDA (COLOR_PTR2), Y
+    PLY
     
     ; COLOR_PTR[A] = color
     ; set color for this tile 
@@ -164,6 +328,9 @@ DRAW_TILE
     LDA TILE_COUNTER
     ADC #$01
     STA TILE_COUNTER
+  
+  PLX
+  PLY
     RTS
 
 ; TILE_COUNTER: from 0-15. Index in 4x4 (=16) tiles card image
@@ -188,7 +355,7 @@ TEST_DRAW
     LDA #$00
     STA TILE_COUNTER
 
-    ; X = 0 (level counter)
+    ; X = 0 (card index)
     LDX #$00
 
   ; This loop draws all 6x4 cards of 4x4 tiles each
@@ -292,13 +459,30 @@ TEST_DRAW
 .include "graphics.asm"
 .include "key_input.asm"
 
+.include "tile_set0.asm"
+.include "tile_set1.asm"
 .include "tile_set2.asm"
 
 Text0 .TEXT "Food Memory"
 Text1 .TEXT "PRESS SPACE TO CONTINUE."
 
-LEVEL0 .BYTE 1,2,3,4,5,6
-       .BYTE 6,5,4,3,2,1
+LEVEL0 .BYTE  1, 2, 3, 4, 5, 6
+       .BYTE  4, 5, 2, 1, 3, 6
+       .BYTE  7, 8, 9,10,11,12
+       .BYTE 12, 9, 8,11,10, 7
+
+LEVEL1 .BYTE 8, 6, 2, 4, 6, 7
+       .BYTE 12,1, 9, 5, 5, 8
+       .BYTE 7 ,12,10,1, 3, 4
+       .BYTE 11,9, 2,11, 10, 3
+
+LEVEL2 .BYTE  9, 7, 1, 3, 5,10
+       .BYTE  9,11, 4, 5, 2, 8
+       .BYTE 12,10, 2, 1, 6, 4
+       .BYTE  3, 7, 6, 8,12,11
+
+LEVEL3 .BYTE 6,2,3,4,5,1
+       .BYTE 6,2,3,4,5,1
        .BYTE 7,8,9,10,11,12
        .BYTE 7,8,9,10,11,12
 
