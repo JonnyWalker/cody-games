@@ -122,6 +122,8 @@ _loop                   ;
     ; randomly select one of
     ; 4 available memory sets
     JSR GET_RAND_BYTE
+    LSR                 ; hacky fix to remove
+    LSR                 ; bias towards b01
     AND #3
     ASL
     TAX
