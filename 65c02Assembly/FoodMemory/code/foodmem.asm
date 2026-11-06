@@ -135,7 +135,7 @@ _NEW_GAME
     ; into data 'segment' so
     ; we don't have to jump
     ; over these arrays...
-    BRA _skip_arrays
+    BRA skip_arrays
 
 LEVELS
     .WORD LEVEL0
@@ -157,7 +157,7 @@ MEMORY_SETS_COLORS
     .WORD COLOR_DATA2
     .WORD COLOR_DATA2
 
-_skip_arrays
+skip_arrays
 
 
 
@@ -410,6 +410,28 @@ TEST_DRAW
     ; all cards have been drawn
 
     RTS
+
+
+
+
+
+
+; MARK: Drawing
+
+DRAW_CARD_AT_XY
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ; MARK: Utilities
