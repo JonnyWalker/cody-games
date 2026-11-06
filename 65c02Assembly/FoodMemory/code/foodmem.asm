@@ -5,12 +5,11 @@
 
 ; Zero page variables
 RANDOM_VALUE  = $D0      ; TODO: used to select a random level
-TILE_COUNTER  = $D1      ; 0-15: used to iterate over tiles in test draw 
+TILE_COUNTER  = $D1      ; 0-15: used to iterate over tiles in test draw
 SCREEN_PTR    = $D2      ; 16-Bit variable
 COLOR_PTR     = $D4      ; 16-Bit variable
 ROW_COUNTER   = $D6      ; 0-5: used to check if one row has been drawn
 LEVEL_PTR16   = $D7      ; 16-Bit variable
-;LEVEL_ARR16   = $D9      ; 16bit Base Address of Level Pointer Address
 CHAR_PTR16    = $DB      ; 16-Bit variable to choose a tile set
 CHAR_MEM_PTR16 = $DD
 COLOR_PTR2    = $DF      ; TODO: usefull comment
@@ -36,26 +35,26 @@ PRINT .macro text, column, row, length
     CPX #\length
     BNE _Print_Text
     .endmacro
-      
+
 MAIN                    ; The program starts running from here
-    LDA #$E1            ; Set border color (Bits 0-3) to white=1 
+    LDA #$E1            ; Set border color (Bits 0-3) to white=1
                         ; and set color memory to $D800 (A000+14*1024=D800), E=14
     STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)
     LDA #$95            ; Set character memory to $C800 (A000+5*2048=C800)
                         ; and set screen memory location $C400 (A000+9*1024=C400)
     STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
     LDA #$01            ; Store shared colors (black=0 and white=1)
-    STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm) 
+    STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
 ; show title screen, compute random value and wait for space key
 _TITLE_SCREEN
     ; overwrites all other graphics
     JSR LOAD_CODSCII_TO_CHAR_MEM
 
-    ; clear with white=1 and black=0 
+    ; clear with white=1 and black=0
     LDA #$10
-    ; replace all characters with empty character            
-    JSR CLEAR_SCREEN    
+    ; replace all characters with empty character
+    JSR CLEAR_SCREEN
 
     ; prints "Food Memory"
     #PRINT Text0, 0, 1, 11
@@ -71,71 +70,37 @@ _TITLE_SCREEN
     ; exit loop on space key
     JSR KEY_TO_A
     CMP #$20
-    BNE _WAIT_FOR_SPACE 
+    BNE _WAIT_FOR_SPACE
 
 _NEW_GAME
-    ; clear with white=1 and black=0 
+    ; clear with white=1 and black=0
     LDA #$10
-    ; replace all characters with empty character            
-    JSR CLEAR_SCREEN 
+    ; replace all characters with empty character
+    JSR CLEAR_SCREEN
 
     ; computes random level
     ; TODO: free Y in subroutine to use this variable (refactoring)
+
+
     LDA RANDOM_VALUE
-    AND #%0000_0011
 
-    ;ASL
-    ;TAX
-    ;LDA $LEVEL_ARR16, X
-    ;STA LEVEL_PTR16+0
-    ;INX
-    ;LDA $LEVEL_ARR16, X
-    ;STA LEVEL_PTR16+1
-    ;JMP _END_OF_LEVEL_LOAD
-
-    CMP #%0000_0000
-    BEQ _LOAD_LEVEL0
-
-    CMP #%0000_0001
-    BEQ _LOAD_LEVEL1
-
-    CMP #%0000_0010
-    BEQ _LOAD_LEVEL2
-
-    CMP #%0000_0011
-    BEQ _LOAD_LEVEL3
-
- ;_LEVEL_PTR_ARR
- ;   .WORD LEVEL0
- ;   .WORD LEVEL1
- ;   .WORD LEVEL2
- ;   .WORD LEVEL3
-
- _LOAD_LEVEL0
-    LDA #<LEVEL0       
+    AND #3
+    ASL
+    TAX
+    LDA LEVELS, X
     STA LEVEL_PTR16+0
-    LDA #>LEVEL0
-    STA LEVEL_PTR16+1  
-    JMP _END_OF_LEVEL_LOAD
-  _LOAD_LEVEL1
-    LDA #<LEVEL1       
-    STA LEVEL_PTR16+0
-    LDA #>LEVEL1
-    STA LEVEL_PTR16+1 
-    JMP _END_OF_LEVEL_LOAD
- _LOAD_LEVEL2
-    LDA #<LEVEL2     
-    STA LEVEL_PTR16+0
-    LDA #>LEVEL2
+    INX
+    LDA LEVELS, X
     STA LEVEL_PTR16+1
     JMP _END_OF_LEVEL_LOAD
- _LOAD_LEVEL3
-    LDA #<LEVEL3       
-    STA LEVEL_PTR16+0
-    LDA #>LEVEL3
-    STA LEVEL_PTR16+1
-    JMP _END_OF_LEVEL_LOAD
- _END_OF_LEVEL_LOAD
+
+LEVELS
+    .WORD LEVEL0
+    .WORD LEVEL1
+    .WORD LEVEL2
+    .WORD LEVEL3
+
+_END_OF_LEVEL_LOAD
 
     ; load random food graphics, overwrite cody character data from title screen
 
@@ -175,7 +140,7 @@ _NEW_GAME
     LDA #<TILE_SET1
     STA CHAR_PTR16+0
     LDA #>TILE_SET1
-    STA CHAR_PTR16+1 
+    STA CHAR_PTR16+1
 
     LDA #<COLOR_DATA1
     STA COLOR_PTR2+0
@@ -186,7 +151,7 @@ _NEW_GAME
     LDA #<TILE_SET2
     STA CHAR_PTR16+0
     LDA #>TILE_SET2
-    STA CHAR_PTR16+1 
+    STA CHAR_PTR16+1
 
     LDA #<COLOR_DATA2
     STA COLOR_PTR2+0
@@ -198,7 +163,7 @@ _NEW_GAME
     LDA #<TILE_SET2
     STA CHAR_PTR16+0
     LDA #>TILE_SET2
-    STA CHAR_PTR16+1 
+    STA CHAR_PTR16+1
 
     LDA #<COLOR_DATA2
     STA COLOR_PTR2+0
@@ -206,8 +171,8 @@ _NEW_GAME
     STA COLOR_PTR2+1
     JMP _END_OF_TILESET_LOAD
  _END_OF_TILESET_LOAD
-    
- 
+
+
     LDA #$00
     STA CHAR_MEM_PTR16+0
     LDA #$C8
@@ -236,14 +201,14 @@ _NEW_GAME
     INX
     CPX #$07
    BNE _COPYCHAR_OUTER_LOOP
-  
-     
 
 
-;    LDX #0         
-; _COPYCHAR   
+
+
+;    LDX #0
+; _COPYCHAR
 ;    LDA CHARDATA0,X
-;    STA $C800,X 
+;    STA $C800,X
 ;    LDA CHARDATA1,X
 ;    STA $C900,X
 ;    LDA CHARDATA2,X
@@ -257,9 +222,9 @@ _NEW_GAME
 ;    LDA CHARDATA6,X
 ;    STA $CE00,X
 ;    INX
-;    ; copy character bytes, use X overflow to copy 7*256 ~= 1.75K of memory  
-;    BNE _COPYCHAR 
-    
+;    ; copy character bytes, use X overflow to copy 7*256 ~= 1.75K of memory
+;    BNE _COPYCHAR
+
     ; draw open cards
     JSR TEST_DRAW
 
@@ -278,7 +243,7 @@ TAY
     ASL
     ASL
     ASL
-    CLC 
+    CLC
     ADC TILE_COUNTER
 
     ; SCREEN_PTR[A] = pixel
@@ -292,7 +257,7 @@ TAY
     ASL
     ASL
     ASL
-    CLC 
+    CLC
     ADC TILE_COUNTER
     PHY
     TAY
@@ -300,9 +265,9 @@ TAY
     ; TODO: use pointer and set pointer in setup according to random value
     LDA (COLOR_PTR2), Y
     PLY
-    
+
     ; COLOR_PTR[A] = color
-    ; set color for this tile 
+    ; set color for this tile
     STA (COLOR_PTR)
 
     ; SCREEN_PTR++
@@ -328,7 +293,7 @@ TAY
     LDA TILE_COUNTER
     ADC #$01
     STA TILE_COUNTER
-  
+
   PLX
   PLY
     RTS
@@ -381,7 +346,7 @@ TEST_DRAW
 
     ; TILE_COUNTER = TILE_COUNTER - 4  (next tile in row starts)
     LDA TILE_COUNTER
-    SEC 
+    SEC
     SBC #$04
     STA TILE_COUNTER
 
@@ -390,11 +355,11 @@ TEST_DRAW
 
     ; check if tiles of one row are drawn (6 cards each row)
     LDA ROW_COUNTER
-    CMP #6 
+    CMP #6
     BEQ _END_ROW
     JMP _ROW
   _END_ROW
-    ; 24(=4*6) tiles of one row have been draw. 
+    ; 24(=4*6) tiles of one row have been draw.
 
     ; TILE_COUNTER = TILE_COUNTER + 4
     LDA TILE_COUNTER
@@ -402,7 +367,7 @@ TEST_DRAW
     ADC #$04
     STA TILE_COUNTER
 
-    ; SCREEN_PTR = SCREEN_PTR + 16 
+    ; SCREEN_PTR = SCREEN_PTR + 16
     ; (skip tiles to go to the beginning of the next row)
     CLC
     LDA SCREEN_PTR+0
@@ -412,7 +377,7 @@ TEST_DRAW
     ADC #0
     STA SCREEN_PTR+1
 
-    ; COLOR_PTR = COLOR_PTR + 16 
+    ; COLOR_PTR = COLOR_PTR + 16
     ; (skip tiles to go to the beginning of the next row)
     CLC
     LDA COLOR_PTR+0
@@ -430,7 +395,7 @@ TEST_DRAW
 
     ; Y%4==0? (4 rows drawn)
     INY
-    TYA 
+    TYA
     AND #%00000011
     BEQ _END_FOUR_ROWS
     JMP _FOUR_ROWS
@@ -443,7 +408,7 @@ TEST_DRAW
     ADC CARDS_EACH_ROW
     TAX
 
-    ; TILE_COUNTER = 0 
+    ; TILE_COUNTER = 0
     LDA #$00
     STA TILE_COUNTER
 
