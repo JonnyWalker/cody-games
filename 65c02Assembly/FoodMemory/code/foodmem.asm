@@ -3,16 +3,18 @@
 ; plink -batch -serial "/dev/ttyUSB0" -sercfg "19200,8,1,n,N" < foodmem.bin
 .include "codyconstants.asm"
 
-; Zero page variables
-RANDOM_VALUE  = $D0      ; TODO: used to select a random level
-TILE_COUNTER  = $D1      ; 0-15: used to iterate over tiles in test draw
-SCREEN_PTR    = $D2      ; 16-Bit variable
-COLOR_PTR     = $D4      ; 16-Bit variable
-ROW_COUNTER   = $D6      ; 0-5: used to check if one row has been drawn
-LEVEL_PTR16   = $D7      ; 16-Bit variable
-CHAR_PTR16    = $DB      ; 16-Bit variable to choose a tile set
-CHAR_MEM_PTR16 = $DD
-COLOR_PTR2    = $DF      ; TODO: usefull comment
+; MARK: - ZP Variables
+RANDOM_VALUE    = $D0   ; TODO: used to select a random level
+TILE_COUNTER    = $D1   ; 0-15: used to iterate over tiles in test draw
+SCREEN_PTR      = $D2   ; 16-Bit variable
+COLOR_PTR       = $D4   ; 16-Bit variable
+ROW_COUNTER     = $D6   ; 0-5: used to check if one row has been drawn
+LEVEL_PTR16     = $D7   ; 16-Bit variable
+CHAR_PTR16      = $DB   ; 16-Bit variable to choose a tile set
+CHAR_MEM_PTR16  = $DD
+COLOR_PTR2      = $DF   ; TODO: usefull comment
+
+GPRNG_SEED      = $F0   ; Galois PRNG Seed
 
 
 ; CONSTANTS
@@ -72,6 +74,19 @@ _TITLE_SCREEN
     CMP #$20
     BNE _WAIT_FOR_SPACE
 
+
+
+; initialize RNG with RANDOM_VALUE
+; as seed; make sure value is not 0
+INIT_RNG
+    LDA RANDOM_VALUE
+    BNE _skip
+    INC A
+_skip
+    STA GPRNG_SEED
+
+
+
 _NEW_GAME
     ; clear with white=1 and black=0
     LDA #$10
@@ -82,17 +97,45 @@ _NEW_GAME
     ; TODO: free Y in subroutine to use this variable (refactoring)
 
 
-    LDA RANDOM_VALUE
 
+
+
+    ; randomly select one of
+    ; 4 available "levels"
+    ;
+    ; TODO: generate random
+    ; level on the fly
+    JSR GET_RAND_BYTE
     AND #3
     ASL
     TAX
     LDA LEVELS, X
-    STA LEVEL_PTR16+0
+    STA LEVEL_PTR16 + 0
     INX
     LDA LEVELS, X
-    STA LEVEL_PTR16+1
-    JMP _END_OF_LEVEL_LOAD
+    STA LEVEL_PTR16 + 1
+
+    ; randomly select one of
+    ; 4 available memory sets
+    JSR GET_RAND_BYTE
+    AND #3
+    ASL
+    TAX
+    LDA MEMORY_SETS_PIXELS, X
+    STA CHAR_PTR16 + 0
+    LDA MEMORY_SETS_COLORS, X
+    STA COLOR_PTR2 + 0
+    INX
+    LDA MEMORY_SETS_PIXELS, X
+    STA CHAR_PTR16 + 1
+    LDA MEMORY_SETS_COLORS, X
+    STA COLOR_PTR2 + 1
+
+    ; TODO: move out of code
+    ; into data 'segment' so
+    ; we don't have to jump
+    ; over these arrays...
+    BRA _skip_arrays
 
 LEVELS
     .WORD LEVEL0
@@ -100,77 +143,24 @@ LEVELS
     .WORD LEVEL2
     .WORD LEVEL3
 
-_END_OF_LEVEL_LOAD
+; TODO: fix naming (missing underscore)
+; TODO: add another tileset (vegetables?)
+MEMORY_SETS_PIXELS
+    .WORD TILE_SET0
+    .WORD TILE_SET1
+    .WORD TILE_SET2
+    .WORD TILE_SET2
 
-    ; load random food graphics, overwrite cody character data from title screen
+MEMORY_SETS_COLORS
+    .WORD COLOR_DATA0
+    .WORD COLOR_DATA1
+    .WORD COLOR_DATA2
+    .WORD COLOR_DATA2
 
-    LDA RANDOM_VALUE
-    AND #%1100_0000
-    LSR
-    LSR
-    LSR
-    LSR
-    LSR
-    LSR
+_skip_arrays
 
-    CMP #%0000_0000
-    BEQ _LOAD_TILESET0
 
-    CMP #%0000_0001
-    BEQ _LOAD_TILESET1
 
-    CMP #%0000_0010
-    BEQ _LOAD_TILESET2
-
-    CMP #%0000_0011
-    BEQ _LOAD_TILESET3
-
- _LOAD_TILESET0
-    LDA #<TILE_SET0
-    STA CHAR_PTR16+0
-    LDA #>TILE_SET0
-    STA CHAR_PTR16+1
-
-    LDA #<COLOR_DATA0
-    STA COLOR_PTR2+0
-    LDA #>COLOR_DATA0
-    STA COLOR_PTR2+1
-    JMP _END_OF_TILESET_LOAD
-  _LOAD_TILESET1
-    LDA #<TILE_SET1
-    STA CHAR_PTR16+0
-    LDA #>TILE_SET1
-    STA CHAR_PTR16+1
-
-    LDA #<COLOR_DATA1
-    STA COLOR_PTR2+0
-    LDA #>COLOR_DATA1
-    STA COLOR_PTR2+1
-    JMP _END_OF_TILESET_LOAD
- _LOAD_TILESET2
-    LDA #<TILE_SET2
-    STA CHAR_PTR16+0
-    LDA #>TILE_SET2
-    STA CHAR_PTR16+1
-
-    LDA #<COLOR_DATA2
-    STA COLOR_PTR2+0
-    LDA #>COLOR_DATA2
-    STA COLOR_PTR2+1
-    JMP _END_OF_TILESET_LOAD
- _LOAD_TILESET3
-    ; TODO: TIMO neue Grafiken
-    LDA #<TILE_SET2
-    STA CHAR_PTR16+0
-    LDA #>TILE_SET2
-    STA CHAR_PTR16+1
-
-    LDA #<COLOR_DATA2
-    STA COLOR_PTR2+0
-    LDA #>COLOR_DATA2
-    STA COLOR_PTR2+1
-    JMP _END_OF_TILESET_LOAD
- _END_OF_TILESET_LOAD
 
 
     LDA #$00
@@ -294,8 +284,8 @@ TAY
     ADC #$01
     STA TILE_COUNTER
 
-  PLX
-  PLY
+    PLX
+    PLY
     RTS
 
 ; TILE_COUNTER: from 0-15. Index in 4x4 (=16) tiles card image
@@ -420,6 +410,20 @@ TEST_DRAW
     ; all cards have been drawn
 
     RTS
+
+
+; MARK: Utilities
+
+; https://6502.org/users/mycorner/6502/code/prng.html
+GET_RAND_BYTE
+    LDA	GPRNG_SEED	    ; get seed
+	ASL			        ; shift byte
+	BCC	_skip		    ; branch if no carry
+	EOR	#$CF		    ; else XOR with $CF
+_skip
+	STA GPRNG_SEED	    ; save number as next seed
+	RTS			        ; done
+
 
 .include "graphics.asm"
 .include "key_input.asm"
