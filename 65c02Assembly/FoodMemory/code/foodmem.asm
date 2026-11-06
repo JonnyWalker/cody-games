@@ -9,7 +9,6 @@ TILE_COUNTER    = $D1   ; 0-15: used to iterate over tiles in test draw
 SCREEN_PTR      = $D2   ; 16-Bit variable
 COLOR_PTR       = $D4   ; 16-Bit variable
 ROW_COUNTER     = $D6   ; 0-5: used to check if one row has been drawn
-LEVEL_PTR16     = $D7   ; 16-Bit variable
 CHAR_PTR16      = $DB   ; 16-Bit variable to choose a tile set
 CHAR_MEM_PTR16  = $DD
 COLOR_PTR2      = $DF   ; TODO: usefull comment
@@ -74,46 +73,51 @@ _TITLE_SCREEN
     CMP #$20
     BNE _WAIT_FOR_SPACE
 
-
-
-; initialize RNG with RANDOM_VALUE
-; as seed; make sure value is not 0
-INIT_RNG
-    LDA RANDOM_VALUE
-    BNE _skip
-    INC A
-_skip
-    STA GPRNG_SEED
-
-
-
 _NEW_GAME
     ; clear with white=1 and black=0
     LDA #$10
     ; replace all characters with empty character
     JSR CLEAR_SCREEN
 
-    ; computes random level
-    ; TODO: free Y in subroutine to use this variable (refactoring)
 
 
 
 
+INIT_RNG                ; initialize the RNG
+    LDA RANDOM_VALUE    ; with RANDOM_VALUE
+    BNE _skip           ; as seed; make sure
+    INC A               ; value is not 0
+_skip                   ;
+    STA GPRNG_SEED      ;
 
-    ; randomly select one of
-    ; 4 available "levels"
-    ;
-    ; TODO: generate random
-    ; level on the fly
-    JSR GET_RAND_BYTE
-    AND #3
-    ASL
-    TAX
-    LDA LEVELS, X
-    STA LEVEL_PTR16 + 0
-    INX
-    LDA LEVELS, X
-    STA LEVEL_PTR16 + 1
+INIT_RANDOM_LEVEL       ; idea: for all cards,
+                        ; draw random index
+                        ;
+    LDY #25             ; 24 iterations.
+                        ; we start at 25 so that
+                        ; Y div 2 produces card
+                        ; values 12...1, each
+                        ; exactly twice. if we
+                        ; started at 24 we would
+                        ; produce one 0.
+_loop                   ;
+    JSR GET_RAND_BYTE   ; get random byte,
+    TAX                 ; and convert to
+    LDA MOD_24,X        ; index into level
+    TAX                 ;
+    LDA LEVEL,X         ; check if card at that index is 0.
+    BNE _loop           ; if its not, then theres already a
+                        ; card assigned; try again.
+    TYA                 ;
+    LSR                 ; div 2 to map 25...1 to 12...1
+    STA LEVEL,X         ; store card id at chosen index
+    DEY                 ;
+    CPY #1              ;
+    BNE _loop           ;
+
+
+
+
 
     ; randomly select one of
     ; 4 available memory sets
@@ -121,15 +125,15 @@ _NEW_GAME
     AND #3
     ASL
     TAX
-    LDA MEMORY_SETS_PIXELS, X
+    LDA MEMORY_SETS_PIXELS,X
+    LDY MEMORY_SETS_COLORS,X
     STA CHAR_PTR16 + 0
-    LDA MEMORY_SETS_COLORS, X
-    STA COLOR_PTR2 + 0
+    STY COLOR_PTR2 + 0
     INX
-    LDA MEMORY_SETS_PIXELS, X
+    LDA MEMORY_SETS_PIXELS,X
+    LDY MEMORY_SETS_COLORS,X
     STA CHAR_PTR16 + 1
-    LDA MEMORY_SETS_COLORS, X
-    STA COLOR_PTR2 + 1
+    STY COLOR_PTR2 + 1
 
     ; TODO: move out of code
     ; into data 'segment' so
@@ -137,11 +141,13 @@ _NEW_GAME
     ; over these arrays...
     BRA skip_arrays
 
-LEVELS
-    .WORD LEVEL0
-    .WORD LEVEL1
-    .WORD LEVEL2
-    .WORD LEVEL3
+
+
+LEVEL
+    .BYTE 0,0,0,0,0,0  ; level data.
+    .BYTE 0,0,0,0,0,0  ;
+    .BYTE 0,0,0,0,0,0  ; 0 if no card assigned,
+    .BYTE 0,0,0,0,0,0  ; value 1...12 otherwise.
 
 ; TODO: fix naming (missing underscore)
 ; TODO: add another tileset (vegetables?)
@@ -228,7 +234,7 @@ PHX
 TXA
 TAY
     ; pixel = LEVEL[X] * 16 + TILE_COUNTER (each card is 4x4=16 tiles)
-    LDA (LEVEL_PTR16), Y
+    LDA LEVEL, Y
     ASL
     ASL
     ASL
@@ -242,7 +248,7 @@ TAY
 
     ; compute color of current tile
     ; color = COLOR_DATA[LEVEL[X] * 16 + TILE_COUNTER]  (each card is 4x4=16 tiles)
-    LDA (LEVEL_PTR16), Y
+    LDA LEVEL, Y
     ASL
     ASL
     ASL
@@ -457,25 +463,20 @@ _skip
 Text0 .TEXT "Food Memory"
 Text1 .TEXT "PRESS SPACE TO CONTINUE."
 
-LEVEL0 .BYTE  1, 2, 3, 4, 5, 6
-       .BYTE  4, 5, 2, 1, 3, 6
-       .BYTE  7, 8, 9,10,11,12
-       .BYTE 12, 9, 8,11,10, 7
+MOD_24
+    .ALIGN 256
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 
-LEVEL1 .BYTE 8, 6, 2, 4, 6, 7
-       .BYTE 12,1, 9, 5, 5, 8
-       .BYTE 7 ,12,10,1, 3, 4
-       .BYTE 11,9, 2,11, 10, 3
-
-LEVEL2 .BYTE  9, 7, 1, 3, 5,10
-       .BYTE  9,11, 4, 5, 2, 8
-       .BYTE 12,10, 2, 1, 6, 4
-       .BYTE  3, 7, 6, 8,12,11
-
-LEVEL3 .BYTE 6,2,3,4,5,1
-       .BYTE 6,2,3,4,5,1
-       .BYTE 7,8,9,10,11,12
-       .BYTE 7,8,9,10,11,12
 
 LAST         ; End of the entire program
 
