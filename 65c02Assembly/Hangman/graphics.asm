@@ -27,21 +27,21 @@ LOAD_CODSCII_TO_CHAR_MEM
         LDX #0        
 _COPYCHAR  
         LDA $E000,X   
-        STA $C000,X
+        STA $C800,X
         LDA $E100,X   
-        STA $C100,X
+        STA $C900,X
         LDA $E200,X   
-        STA $C200,X
+        STA $CA00,X
         LDA $E300,X   
-        STA $C300,X
+        STA $CB00,X
         LDA $E400,X   
-        STA $C400,X
+        STA $CC00,X
         LDA $E500,X   
-        STA $C500,X
+        STA $CD00,X
         LDA $E600,X   
-        STA $C600,X 
+        STA $CE00,X 
         LDA $E700,X   
-        STA $C700,X
+        STA $CF00,X
         INX
         BEQ _COPYCHAR ; use overflow
         RTS
