@@ -29,6 +29,7 @@ _COPYCHAR   LDA CHARDATA,X
             CPX #40             ; 5*8=40
             BNE _COPYCHAR
             
+            LDA #$00
             JSR CLEAR_SCREEN    ; replace all characters with empty character
 
             LDA #1              ; print H

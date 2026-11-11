@@ -21,6 +21,7 @@ MAIN                            ; The program starts running from here
             STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
 
             JSR LOAD_CODSCII_TO_CHAR_MEM
+            LDA #$00
             JSR CLEAR_SCREEN    ; replace all characters with empty character
 
             LDA #$E0            ; set color for letters (CODSCII uses color 1)
