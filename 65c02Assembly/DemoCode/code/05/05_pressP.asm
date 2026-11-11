@@ -39,7 +39,7 @@ _COPYCHAR   LDA CHARDATA,X
             LDA #5              ; read in row 6 (zero indexed)
             STA VIA_IORA
 _READKEY    LDA VIA_IORA        ; wait for P Key
-            LSR A
+            LSR A               ; 3 logical right shifts: A >> 3
             LSR A
             LSR A
             AND #%10000
