@@ -1,0 +1,58 @@
+; assumes: 
+; SCREEN MEM at $C400 
+; COLOR MEM at $D800
+; tile 0 is "empty tile"
+; Parameter: A contains color (e.g. #$00 )
+CLEAR_SCREEN
+        ; set characters from $C400 to $C800 to empty tile
+        ; set color from $D800 to $DC00 to value in A
+        LDX #0              
+_EMPTY
+        STZ $C400,X
+        STA $D800,X 
+        STZ $C500,X
+        STA $D900,X 
+        STZ $C600,X
+        STA $DA00,X 
+        STZ $C700,X
+        STA $DB00,X 
+        INX
+        BNE _EMPTY
+        RTS
+
+; ROM location $E000: CODSCII characters are always there. 
+; assumes CHAR MEM at $C800
+; see Cody Computer Book page 316
+LOAD_CODSCII_TO_CHAR_MEM
+        LDX #0        
+_COPYCHAR  
+        LDA $E000,X   
+        STA $C800,X
+        LDA $E100,X   
+        STA $C900,X
+        LDA $E200,X   
+        STA $CA00,X
+        LDA $E300,X   
+        STA $CB00,X
+        LDA $E400,X   
+        STA $CC00,X
+        LDA $E500,X   
+        STA $CD00,X
+        LDA $E600,X   
+        STA $CE00,X 
+        LDA $E700,X   
+        STA $CF00,X
+        INX
+        BEQ _COPYCHAR ; use overflow
+        RTS
+
+WAITBLANK
+_WAITVIS
+    ; Wait until the blanking is zero (drawing the screen)
+    LDA VID_BLNK
+    BNE _WAITVIS
+_WAITBLANK
+    ; Wait until the blanking is one (not drawing the screen)
+    LDA VID_BLNK
+    BEQ _WAITBLANK
+    RTS
