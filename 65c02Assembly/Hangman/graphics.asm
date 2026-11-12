@@ -43,7 +43,7 @@ _COPYCHAR
         LDA $E700,X   
         STA $CF00,X
         INX
-        BEQ _COPYCHAR ; use overflow
+        BNE _COPYCHAR ; use overflow
         RTS
 
 WAITBLANK

@@ -1,5 +1,5 @@
 ; prints the text "HELLO" using the CODSCII characters from ROM
-; not supported by https://github.com/iTitus/cody_emulator 
+; requires CODSCII charset at 0xE000
 ; 64tass --mw65c02 --nostart -o 04_hello3.bin 04_hello3.asm
 
 .include "codyconstants.asm"
