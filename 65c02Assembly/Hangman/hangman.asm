@@ -44,7 +44,10 @@ MAIN                            ; The program starts running from here
                                 ; and set screen memory location $C400 (A000+9*1024=C400)
             STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
             LDA #$C9            ; Store shared colors (gray=14 and brown=9)
-            STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm) 
+            STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
+
+            LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)
+            STA VIA_DDRA        ; This is required for keyboard input 
 
             JSR LOAD_CODSCII_TO_CHAR_MEM
 

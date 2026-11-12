@@ -44,6 +44,9 @@ MAIN                    ; The program starts running from here
     LDA #$01            ; Store shared colors (black=0 and white=1)
     STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
+    LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)
+    STA VIA_DDRA        ; This is required for keyboard input
+
 ; show title screen, compute random value and wait for space key
 _TITLE_SCREEN
     ; overwrites all other graphics
