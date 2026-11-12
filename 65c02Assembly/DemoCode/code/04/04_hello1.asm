@@ -1,0 +1,43 @@
+; prints the text "HELLO" using the CODSCII characters from ROM
+; requires CODSCII charset at 0xE000
+
+.include "codyconstants.asm"
+
+; Program header for Cody Basic's loader (needs to be first)
+
+.WORD ADDR                      ; Starting address (just like KIM-1, Commodore, etc.)
+.WORD (ADDR + LAST - MAIN - 1)  ; Ending address (so we know when we're done loading)
+
+; The actual program.
+
+.LOGICAL    ADDR                ; The actual program gets loaded at ADDR
+
+MAIN                            ; The program starts running from here
+            LDA #$E2            ; Set border color (Bits 0-3) to red=2 
+                                ; and set color memory to $D800 (A000+14*1024=D800), E=14
+            STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)
+            LDA #$98            ; Set character memory to $E000 (A000+8*2048=E000)
+                                ; and set screen memory location $C400 (A000+9*1024=C400)
+            STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
+
+            LDA #$E0
+            JSR CLEAR_SCREEN    ; replace all characters with empty character
+
+            LDA #'H'            ; print H
+            STA $C400
+            LDA #'E'            ; print E
+            STA $C401
+            LDA #'L'            ; print L
+            STA $C402
+            LDA #'L'            ; print L
+            STA $C403
+            LDA #'O'            ; print O
+            STA $C404
+
+_DONE       JMP _DONE           ; Loops forever
+
+.include "graphics.asm"
+
+LAST                            ; End of the entire program
+
+.ENDLOGICAL
