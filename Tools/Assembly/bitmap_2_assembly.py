@@ -1,4 +1,4 @@
-# input: a 160x200 pixel bitmap file, only using "cody compatible colors" (see below)
+# input: a bitmap file, only using "cody compatible colors" (see below) and only 4 colors per tile
 # output: 65c02 assembly compatible pixel and color bytes
 import sys
 import os
@@ -6,24 +6,6 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 # define cody compatible colors
-# bad colors
-# BLACK       = (0,     0,   0, 255)
-# WHITE       = (255, 255, 255, 255)
-# RED         = (255,   0,   0, 255)
-# CYAN        = (0,   255, 255, 255)
-# PURPLE      = (128,   0, 128, 255)
-# GREEN       = (0,   255,   0, 255)
-# BLUE        = (0,     0, 255, 255)
-# YELLOW      = (255, 255,   0, 255)
-# ORANGE      = (224, 160,   0, 255)
-# BROWN       = (128,  96,  64, 255)
-# LIGHT_RED   = (224, 192, 128, 255)
-# DARK_GRAY   = (96,   96,  96, 255)
-# GRAY        = (128, 128, 128, 255)
-# LIGHT_GREEN = (160, 224, 128, 255)
-# LIGHT_BLUE  = (192, 220, 192, 255)
-# LIGHT_GRAY  = (196, 196, 196, 255)
-
 BLACK       = (0x00, 0x00, 0x00, 0xff)
 WHITE       = (0xff, 0xff, 0xff, 0xff)
 RED         = (0xcc, 0x00, 0x00, 0xff)
@@ -47,8 +29,7 @@ COMPATIBLE_COLORS = [BLACK, WHITE, RED, CYAN,
                      GRAY, LIGHT_GREEN, LIGHT_BLUE, LIGHT_GRAY]
 COLOR_MAP = {x:i for i, x in enumerate(COMPATIBLE_COLORS)}
 tile_counter = 0
-debug_labels = ["apple", "banana", "strawberry", "grapes", "kiwi", "papaya",
-                "melon", "cherry", "plum", "coconut", "raspberry", "pitaya"]
+debug_label = "Apple"
 
 # edit those line
 FILE = sys.argv[1]
@@ -119,8 +100,7 @@ def compute_pixels_and_color(x1,x2,y1,y2):
     if tile_counter % 32 == 0:
         print(f"\nCHARDATA{tile_counter//32}")
     # assembly comment to find tiles
-    pixel_data = "; tile "+str(tile_counter)+"\n"
-    pixel_data += "; "+debug_labels[tile_counter//16]+" "+str(tile_counter%16)+"\n"
+    pixel_data = "; "+debug_label+" "+str(tile_counter%16)+"\n"
     tile_counter+=1
     for y in range(y1, y2):
         pixel_data += ".BYTE %"
@@ -160,7 +140,7 @@ for j in range(height//8):
 
 # print color data
 for index, color_row in enumerate(color_list):
-    print("; "+debug_labels[index//4]+" color")
+    print("; "+debug_label + " color")
     color_data = ".BYTE "
     for cd in color_row[:-1]:
         color_data += cd+","
