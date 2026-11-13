@@ -129,18 +129,17 @@ LEVEL
     .BYTE 0,0,0,0,0,0  ; value 1...12 otherwise.
 
 ; TODO: fix naming (missing underscore)
-; TODO: add another tileset (vegetables?)
 MEMORY_SETS_PIXELS
     .WORD TILE_SET0
     .WORD TILE_SET1
     .WORD TILE_SET2
-    .WORD TILE_SET2
+    .WORD TILE_SET3
 
 MEMORY_SETS_COLORS
     .WORD COLOR_DATA0
     .WORD COLOR_DATA1
     .WORD COLOR_DATA2
-    .WORD COLOR_DATA2
+    .WORD COLOR_DATA3
 
 skip_arrays
 
@@ -424,12 +423,14 @@ GET_RANDOM_BYTE_TO_A
 .include "tile_set0.asm"
 .include "tile_set1.asm"
 .include "tile_set2.asm"
+.include "tile_set3.asm"
 
 Text0 .TEXT "Food Memory"
 Text1 .TEXT "PRESS SPACE TO CONTINUE."
 
+.ALIGN 256
+
 MOD_24
-    .ALIGN 256
     .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
     .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
     .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
