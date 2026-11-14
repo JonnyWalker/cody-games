@@ -46,9 +46,9 @@ Review the Assembly example code along with the comments in each file, then comp
 
 # 06 Draw Level
 
-Hint: use the Python scripts in https://github.com/JonnyWalker/cody-games/tree/main/Tools/CodyBASIC to convert images to tile data or sprite data.
+Hint: use the Python script in https://github.com/JonnyWalker/cody-games/tree/main/Tools/Assembly to convert images to tile data.
 
-E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
+E.g `python bitmap_2_assembly.py tiles/Vegetable/Mushroom.bmp > tileset.asm`
 
 - Example: draws a level (river and land) by changing tile colors [06_level.asm](./code/06/06_level.asm)
 - Exercise: add a gray status bar at the bottom (last five rows) and write the text "Codyvision" [06_solution.asm](./code/06/06_solution.asm)
@@ -57,7 +57,7 @@ E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
 
 # 07 Draw Sprite
 
-Hint: use the Python scripts in https://github.com/JonnyWalker/cody-games/tree/main/Tools/CodyBASIC to convert images to tile data or sprite data.
+Hint: use the Python scripts in https://github.com/JonnyWalker/cody-games/tree/main/Tools/CodyBASIC to convert images to sprite data.
 
 E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
 - Book: Page 327 "MOVING GRAPHICS WITH SPRITES"

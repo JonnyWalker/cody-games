@@ -25,38 +25,15 @@ MAIN                            ; The program starts running from here
             LDA #$E2            ; Store shared colors (light blue=14 and red=2)
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
-; set characters from $C400 to $C500 to empty tile
-            LDX #0              
-_EMPTY0
-            STZ $C400,X
-            INX
-            BNE _EMPTY0
-; set characters from $C500 to $C600 to empty tile
-            LDX #0              
-_EMPTY1
-            STZ $C500,X
-            INX
-            BNE _EMPTY1
-
-; set characters from $C600 to $C700 to empty tile
-            LDX #0              
-_EMPTY2
-            STZ $C600,X
-            INX
-            BNE _EMPTY2
-; set characters from $C700 to $C800 to empty tile
-            LDX #0              
-_EMPTY3
-            STZ $C700,X
-            INX
-            BNE _EMPTY3
-
             LDX #0              ; Copy character
 _COPYCHAR   LDA CHARDATA,X
             STA $C800,X
             INX
             CPX #144          ; copy 18*8 Bytes
             BNE _COPYCHAR
+
+            LDA #$00
+            JSR CLEAR_SCREEN    ; replace all characters with empty character
             
             LDA #$00            ; set color pointer to $D800
             STA COLORPTR+0
@@ -175,6 +152,8 @@ _COPYCOLOR4 LDA #$0C            ; forground color (0=black) backgrund color (C=g
 
 
 _DONE       JMP _DONE           ; Loops forever
+
+.include "graphics.asm"
 
 CHARDATA
 
