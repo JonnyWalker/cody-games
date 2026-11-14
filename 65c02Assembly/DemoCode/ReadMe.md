@@ -48,7 +48,7 @@ Review the Assembly example code along with the comments in each file, then comp
 
 Hint: use the Python script in https://github.com/JonnyWalker/cody-games/tree/main/Tools/Assembly to convert images to tile data.
 
-E.g `python bitmap_2_assembly.py tiles/Vegetable/Mushroom.bmp > tileset.asm`
+E.g `python bitmap_2_assembly.py tiles/Landscape/house0.bmp`
 
 - Example: draws a level (river and land) by changing tile colors [06_level.asm](./code/06/06_level.asm)
 - Exercise: add a gray status bar at the bottom (last five rows) and write the text "Codyvision" [06_solution.asm](./code/06/06_solution.asm)
