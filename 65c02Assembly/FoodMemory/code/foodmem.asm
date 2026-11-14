@@ -116,33 +116,6 @@ INIT_RANDOM_LEVEL       ; idea: for all cards,
     STA CHAR_ROM_PTR16 + 1
     STY COLOR_ROM_PTR + 1
 
-    ; TODO: move out of code
-    ; into data 'segment' so
-    ; we don't have to jump
-    ; over these arrays...
-    BRA skip_arrays
-
-LEVEL
-    .BYTE 0,0,0,0,0,0  ; level data.
-    .BYTE 0,0,0,0,0,0  ;
-    .BYTE 0,0,0,0,0,0  ; 0 if no card assigned,
-    .BYTE 0,0,0,0,0,0  ; value 1...12 otherwise.
-
-; TODO: fix naming (missing underscore)
-MEMORY_SETS_PIXELS
-    .WORD TILE_SET0
-    .WORD TILE_SET1
-    .WORD TILE_SET2
-    .WORD TILE_SET3
-
-MEMORY_SETS_COLORS
-    .WORD COLOR_DATA0
-    .WORD COLOR_DATA1
-    .WORD COLOR_DATA2
-    .WORD COLOR_DATA3
-
-skip_arrays
-
     ; set pointer to character memory $C800
     LDA #$00
     STA CHAR_MEM_PTR16+0
@@ -417,6 +390,14 @@ GET_RANDOM_BYTE_TO_A
 	RTS			        
 
 
+
+
+
+
+
+
+; MARK: - Data Segment
+
 .include "graphics.asm"
 .include "key_input.asm"
 
@@ -429,7 +410,6 @@ Text0 .TEXT "Food Memory"
 Text1 .TEXT "PRESS SPACE TO CONTINUE."
 
 .ALIGN 256
-
 MOD_24
     .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
     .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
@@ -443,7 +423,27 @@ MOD_24
     .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
     .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 
+; TODO: fix naming (missing underscore)
+MEMORY_SETS_PIXELS
+    .WORD TILE_SET0
+    .WORD TILE_SET1
+    .WORD TILE_SET2
+    .WORD TILE_SET3
 
-LAST         ; End of the entire program
+MEMORY_SETS_COLORS
+    .WORD COLOR_DATA0
+    .WORD COLOR_DATA1
+    .WORD COLOR_DATA2
+    .WORD COLOR_DATA3
 
+LEVEL
+    .BYTE 0,0,0,0,0,0  ; level data.
+    .BYTE 0,0,0,0,0,0  ;
+    .BYTE 0,0,0,0,0,0  ; 0 if no card assigned,
+    .BYTE 0,0,0,0,0,0  ; value 1...12 otherwise.
+
+
+
+; End of the entire program
+LAST
 .ENDLOGICAL
