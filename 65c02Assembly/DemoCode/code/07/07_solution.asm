@@ -22,6 +22,16 @@ MAIN                            ; The program starts running from here
             LDA #$E2            ; Store shared colors (light blue=14 and red=2)
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
+            LDX #0              ; Copy character pixels
+_COPYCHAR   LDA CHARDATA,X
+            STA $C800,X
+            INX
+            CPX #8             ; copy 8 Bytes
+            BNE _COPYCHAR
+
+            LDA #$00
+            JSR CLEAR_SCREEN    ; replace all characters with empty character
+
             LDX #0              ; Copy sprite data into video memory
 _COPYSPRT   LDA SPRITEDATA,X
             STA $A400,X         ; sprite pixel data location. Page 327 and 535 
@@ -41,6 +51,19 @@ _COPYSPRT   LDA SPRITEDATA,X
             STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)           
 
 _DONE       JMP _DONE           ; Loops forever
+
+.include "graphics.asm"
+
+CHARDATA
+
+  .BYTE %00000000 ; "empty tile"
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
+  .BYTE %00000000
 
 SPRITEDATA
 
