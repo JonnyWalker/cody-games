@@ -47,20 +47,19 @@ MAIN                    ; The program starts running from here
     LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)
     STA VIA_DDRA        ; This is required for keyboard input
 
-; show title screen, compute random value and wait for space key
-_TITLE_SCREEN
+
+
+
+
+SHOW_TITLE_SCREEN
     ; overwrites all other graphics
     JSR LOAD_CODSCII_TO_CHAR_MEM
 
-    ; clear with white=1 and black=0
-    LDA #$10
-    ; replace all characters with empty character
-    JSR CLEAR_SCREEN
+    LDA #$10            ; clear with white=1 and black=0
+    JSR CLEAR_SCREEN    ; replace all characters with empty character
 
-    ; prints "Food Memory"
-    #PRINT Text0, 0, 1, 11
-    ; prints "PRESS SPACE TO CONTINUE."
-    #PRINT Text1, 0, 23, 24
+    #PRINT Text0, 0,  1, 11 ; prints "Food Memory"
+    #PRINT Text1, 0, 23, 24 ; prints "PRESS SPACE TO CONTINUE."
 
   _WAIT_FOR_SPACE
     ; exit loop on space key
@@ -75,30 +74,35 @@ _NEW_GAME
     JSR CLEAR_SCREEN
 
 
-INIT_RANDOM_LEVEL       ; idea: for all cards,
-                        ; draw random index
-                        ;
-    LDY #25             ; 24 iterations.
-                        ; we start at 25 so that
-                        ; Y div 2 produces card
-                        ; values 12...1, each 
-                        ; exactly twice. if we
-                        ; started at 24 we would
-                        ; produce one 0.
-  _loop                      ;
-    JSR GET_RANDOM_BYTE_TO_A ; get random byte,
-    TAX                      ; and convert to
-    LDA MOD_24,X             ; index into level
-    TAX                      ;
-    LDA LEVEL,X              ; check if card at that index is 0.
-    BNE _loop                ; if its not, then theres already a
-                             ; card assigned; try again.
-    TYA                      ;
-    LSR                      ; div 2 to map 25...1 to 12...1
-    STA LEVEL,X              ; store card id at chosen index
-    DEY                      ;
-    CPY #1                   ;
-  BNE _loop                  ;
+
+INIT_RANDOM_LEVEL               ; idea: for all cards,
+                                ; draw random index
+
+    LDX #23
+_zero
+    STZ LEVEL,X
+    DEX
+    BPL _zero
+                                ;
+    LDY #25                     ; 24 iterations.
+                                ; we start at 25 so that Y / 2
+                                ; produces card values 12...1,
+                                ; each exactly twice. if we
+                                ; started at 24 we would produce one 0.
+_loop                           ;
+    JSR GET_RANDOM_BYTE_TO_A    ; get random byte, and convert to
+    TAX                         ; index into level. mod 24 using
+    LDA MOD_24,X                ; a lookup table.
+    TAX                         ;
+    LDA LEVEL,X                 ; check if card at that index is 0.
+    BNE _loop                   ; if its not, then theres already a
+                                ; card assigned; try again.
+    TYA                         ;
+    LSR                         ; div 2 to map 25...1 to 12...1
+    STA LEVEL,X                 ; store card id at chosen index.
+    DEY                         ;
+    CPY #1                      ;
+    BNE _loop                   ;
 
     ; randomly select one of
     ; 4 available memory sets
@@ -128,8 +132,12 @@ INIT_RANDOM_LEVEL       ; idea: for all cards,
     ; draw open cards (only a debug subroutine)
     JSR TEST_DRAW
 
-_GAME_LOOP
-JMP _GAME_LOOP
+_POLL_KEYBOARD
+    JSR KEY_TO_A
+    CMP #"R"
+    BNE _POLL_KEYBOARD
+
+    JMP SHOW_TITLE_SCREEN
 
 ; helper for subroutine TEST_DRAW
 DRAW_TILE
