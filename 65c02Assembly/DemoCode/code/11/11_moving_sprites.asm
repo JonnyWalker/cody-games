@@ -70,14 +70,16 @@ _DRAW
             LDA SPRITEY         ; sprite Y
             STA SPR0_Y          ; SPR0_Y=$D081 (see codyconstants.asm)
 
+            JSR MOVE_SPRITES
+
             JMP _LOOP           ; Game loops 
 
 .include "graphics.asm"
 .include "init_video.asm"
 .include "draw_game.asm"
-.include "game_logic.asm"
 .include "sprite_data.asm"
 .include "tile_data.asm"
+.include "game_logic.asm"
 
 LAST                            ; End of the entire program
 

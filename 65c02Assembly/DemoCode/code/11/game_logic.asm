@@ -52,3 +52,38 @@ _COLLISION_DETECTED
     LDA #$74            ; change color to red (=4)
     STA SPR0_COL 
     RTS
+
+; Subroutine moves all enemys every 8 frames
+MOVE_SPRITES
+    ; if FRAMECTR%8!=0 then skip subroutine
+    LDA FRAMECTR
+    AND #$07
+    BEQ _MOVE_SPRITES
+    RTS
+
+_MOVE_SPRITES
+    LDX #12             ; Index in sprite bank 0
+    LDY #0              ; Sprite counter
+_MOVE_LOOP
+    ; SPRITE_Y++
+    LDA SPR0_Y, X
+    INC A
+    STA SPR0_Y, X
+
+    ; if SPRITE_Y==160 then SPRITE_Y=0
+    CMP #160
+    BNE _SKIP_Y_RESET
+    LDA #$00
+    STA SPR0_Y, X
+ _SKIP_Y_RESET
+
+    ; X += 4
+    INX
+    INX
+    INX
+    INX
+    ; Y ++
+    INY
+    CPY #5
+    BNE _MOVE_LOOP ; check next sprite (5 sprite total)
+    RTS
