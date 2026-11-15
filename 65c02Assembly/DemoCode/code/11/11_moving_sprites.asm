@@ -1,4 +1,6 @@
-; collision between jet and fuel
+; moving sprites with collision detection
+; 64tass --mw65c02 --nostart -o 11_moving_sprites.bin 11_moving_sprites.asm
+; plink -batch -serial \\.\COMX -sercfg "19200,8,1,n,N" < 11_moving_sprites.bin
 
 .include "codyconstants.asm"
 
