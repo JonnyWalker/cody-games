@@ -87,3 +87,27 @@ _MOVE_LOOP
     CPY #5
     BNE _MOVE_LOOP ; check next sprite (5 sprite total)
     RTS
+
+; Subroutine called after fire button
+FIRE
+    LDA SPR0_Y+8                ; skip if bullet SPRITE_Y != 0 (bullet is already moving)
+    BEQ _FIRE
+    RTS
+_FIRE
+    LDA SPRITEX                 ; set bullet SPRITE_X to jet bullet SPRITE_X+2 (so the bullet is fired in the middle)
+    ADC #$02
+    STA SPR0_X+8
+    LDA SPRITEY
+    SBC #$07                    
+    STA SPR0_Y+8                ; set bullet SPRITE_Y to jet SPRITE_Y-7 (bullet height)
+    RTS
+
+MOVE_BULLET
+    LDA SPR0_Y+8                ; skip if bullet SPRITE_Y == 0 (bullet has left the visible screen)
+    BNE _MOVE_BULLET
+    RTS
+_MOVE_BULLET                    ; bullet SPRITE_Y-- (move up)
+    LDA SPR0_Y+8 
+    DEC A
+    STA SPR0_Y+8 
+    RTS
