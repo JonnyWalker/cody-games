@@ -87,3 +87,10 @@ E.g `python image_to_bytes.py -s sprites/Jet.bmp -l tass`
 - Exercise: add collision checks for all 5 sprites [10_solution.asm](code/10/10_solution.asm)
 
 ![solution10.png](image/solution10.png)
+
+# 11 Movement of Sprites
+- Example: Other sprites move automatically [11_moving_sprites.asm](code/11/11_moving_sprites.asm)
+- Exercise: add a moving bullet when the joystick button is pressed (right shift) [11_solution.asm](code/11/11_solution.asm)
+
+![solution11.png](image/solution11.png)
+
