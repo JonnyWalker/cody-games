@@ -26,38 +26,15 @@ MAIN                            ; The program starts running from here
             LDA #$E2            ; Store shared colors (light blue=14 and red=2)
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
-            ; set characters from $C400 to $C500 to empty tile
-            LDX #0              
-_EMPTY0
-            STZ $C400,X
-            INX
-            BNE _EMPTY0
-; set characters from $C500 to $C600 to empty tile
-            LDX #0              
-_EMPTY1
-            STZ $C500,X
-            INX
-            BNE _EMPTY1
-
-; set characters from $C600 to $C700 to empty tile
-            LDX #0              
-_EMPTY2
-            STZ $C600,X
-            INX
-            BNE _EMPTY2
-; set characters from $C700 to $C800 to empty tile
-            LDX #0              
-_EMPTY3
-            STZ $C700,X
-            INX
-            BNE _EMPTY3
-
             LDX #0              ; Copy character
 _COPYCHAR   LDA CHARDATA,X
             STA $C800,X
             INX
             CPX #144          ; copy 18*8 Bytes
             BNE _COPYCHAR
+
+            LDA #$00
+            JSR CLEAR_SCREEN    ; replace all characters with empty character
 
 ; start of solution
             LDX #0              ; Copy sprite data into video memory (4 sprites of 64 byte)
@@ -167,7 +144,7 @@ _COPYSPRT2  LDA SPRITEDATA2,X
             STA COLORPTR+1
 
             LDX #0              ; Change tile color 
-_XLOOP  
+_DRAW_LEVEL  
             LDY #0              
 _COPYCOLOR  LDA #$05            ; forground color (0=black) backgrund color (5=green)
             STA (COLORPTR),Y    ; Copy colors to color memory 
@@ -195,7 +172,7 @@ _COPYCOLOR3 LDA #$05            ; forground color (0=black) backgrund color (5=g
 
             INX                 ; check end of outer loop (25 rows)
             CPX #20
-            BNE _XLOOP
+            BNE _DRAW_LEVEL
 
             LDA #$7F            ; Store shared colors (yellow=7 and light gray=15)
             STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
@@ -212,7 +189,7 @@ _COPYCOLOR3 LDA #$05            ; forground color (0=black) backgrund color (5=g
             STA $C56D
 
             LDX #0              ; Change tile color 
-_XLOOP2
+_DRAW_STATUS_BAR
             LDY #0              
 _COPYCOLOR4 LDA #$0C            ; forground color (0=black) backgrund color (5=gray)
             STA (COLORPTR),Y    ; Copy colors to color memory 
@@ -230,7 +207,7 @@ _COPYCOLOR4 LDA #$0C            ; forground color (0=black) backgrund color (5=g
 
             INX                 ; check end of outer loop (5 rows)
             CPX #5
-            BNE _XLOOP2 
+            BNE _DRAW_STATUS_BAR 
 
             LDA #6              ; print C
             STA $C7D0
@@ -309,16 +286,7 @@ _DRAW
 
             JMP _LOOP           ; Game loops 
 
-
-WAITBLANK
-
-_WAITVIS    LDA VID_BLNK        ; Wait until the blanking is zero (drawing the screen)
-            BNE _WAITVIS
-            
-_WAITBLANK  LDA VID_BLNK        ; Wait until the blanking is one (not drawing the screen)
-            BEQ _WAITBLANK
-            
-            RTS
+.include "graphics.asm"
 
 SPRITEDATA
 
