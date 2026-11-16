@@ -25,7 +25,7 @@ MAIN                            ; The program starts running from here
             BNE _CLEAR
 
             LDA #15             ; set volume to max
-            STA $D418
+            STA SID_FVOL
 
             LDA #$D6            ; set frequency to 7382 (440 Hz = A note)
             STA SID_V1FL        
