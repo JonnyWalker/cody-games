@@ -387,14 +387,14 @@ DRAW_CARD_AT_XY
 
 ; use noise for random value
 GET_RANDOM_BYTE_TO_A
-  ; activate voice 3 in noise mode to generate random values in $D41B
-  LDA #196
-  STA $D40E
-  LDA #9
-  STA $D40F
-  LDA #129
-  STA $D412
-  LDA	$D41B      
+  ; switch voice 3 to noise mode with maximum frequency to generate random values in SID_V3OC ($D41B)
+  LDA #$FF
+  STA SID_V3FL
+  LDA #$FF
+  STA SID_V3FH
+  LDA #$80
+  STA SID_V3CT
+  LDA	SID_V3OC
 	RTS			        
 
 
