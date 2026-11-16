@@ -1,6 +1,6 @@
 ; ported to assembly from Cody Book Page 361 (triangle waves)
-; 64tass --mw65c02 --nostart -o 11_sound_effects.bin 11_sound_effects.asm
-; plink -batch -serial \\.\COMX -sercfg "19200,8,1,n,N" < 11_sound_effects.bin
+; 64tass --mw65c02 --nostart -o 12_triangle_waves.bin 12_triangle_waves.asm
+; plink -batch -serial \\.\COMX -sercfg "19200,8,1,n,N" < 12_triangle_waves.bin
 
 .include "codyconstants.asm"
 

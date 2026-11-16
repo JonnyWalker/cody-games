@@ -1,6 +1,6 @@
 ; ported to assembly from Cody Book Page 362 (sawtooth waves)
-; 64tass --mw65c02 --nostart -o 11_sound_effects.bin 11_sound_effects.asm
-; plink -batch -serial \\.\COMX -sercfg "19200,8,1,n,N" < 11_sound_effects.bin
+; 64tass --mw65c02 --nostart -o 12_sawtooth_waves.bin 12_sawtooth_waves.asm
+; plink -batch -serial \\.\COMX -sercfg "19200,8,1,n,N" < 12_sawtooth_waves.bin
 
 .include "codyconstants.asm"
 
@@ -53,7 +53,7 @@ MAIN                            ; The program starts running from here
 
             CMP #$78            ; turn of after 120 frames (2 seconds)
             BNE _CONTINUE
-            LDA #$10            ; turn of (bit0=0)
+            LDA #$20            ; turn of (bit0=0)
             STA SID_V1CT
             RTS                 ; return to CODY BASIC
 
