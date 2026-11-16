@@ -27,7 +27,7 @@ MAIN                            ; The program starts running from here
             LDA #15             ; set volume to max
             STA SID_FVOL
 
-            LDA #$C4            ; set frequency to 2500 (146 Hz = D3 note)
+            LDA #$C4            ; set frequency to 2500 (146 Hz = D3 tone)
             STA SID_V1FL        
             LDA #$09
             STA SID_V1FH
