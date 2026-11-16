@@ -38,7 +38,7 @@ MAIN                            ; The program starts running from here
             LDA #$FC            ; sustain = 15, release = 12 (3 s)
             STA SID_V1SR
 
-            LDA #$17            ; bit4=triangle wave, bit0=start sound
+            LDA #$11            ; bit4=triangle wave, bit0=start sound
             STA SID_V1CT
 
             STZ FRAMECTR        ; FRAMECTR=0  
