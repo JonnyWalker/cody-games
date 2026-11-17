@@ -41,7 +41,7 @@ MAIN                            ; The program starts running from here
             LDA #$00            ; set frequency to 2560 (155 Hz = D3# tone)
             STA SID_V3FL
             LDA #$0A
-            STA SID_V3FL
+            STA SID_V3FH
 
             LDA #$15            ; bit4=triangle wave, bit2=ring modulation on, bit0=start sound
             STA SID_V1CT
