@@ -70,7 +70,8 @@ _COPYSPRT
     LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
     STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)  
 
-    STZ FRAME_CTR       ; FRAME_CTR=0
+    STZ FRAME_CTR             ; FRAME_CTR=0
+    STZ MOVEMENT_COOLDOWN_CTR ; MOVEMENT_COOLDOWN_CTR=0
     STZ CARD_PTR16+0
     STZ CARD_PTR16+1
 
