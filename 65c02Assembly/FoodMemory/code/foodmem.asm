@@ -13,6 +13,7 @@ CHAR_ROM_PTR16    = $DB   ; 16-Bit variable. used to read tile char data from RO
 CHAR_MEM_PTR16    = $DD   ; 16-Bit variable. used to write tile char data to memory
 COLOR_ROM_PTR     = $DF   ; 16-Bit variable. used to read tile color data from ROM
 FRAME_CTR         = $E1
+CARD_PTR16        = $E3
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
@@ -68,6 +69,8 @@ _COPYSPRT
     STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)  
 
     STZ FRAME_CTR       ; FRAME_CTR=0
+    STZ CARD_PTR16+0
+    STZ CARD_PTR16+1
 
 
 
@@ -164,13 +167,22 @@ _POLL_KEYBOARD
 
     JSR KEY_TO_A
     CMP #"W"
-    BEQ _UP
+    BNE _CHECK_NEXT_KEY0
+    JMP _UP
+_CHECK_NEXT_KEY0
     CMP #"A"
-    BEQ _LEFT
+    BNE _CHECK_NEXT_KEY1
+    JMP _LEFT
+_CHECK_NEXT_KEY1
     CMP #"D"
-    BEQ _RIGHT
+    BNE _CHECK_NEXT_KEY2
+    JMP _RIGHT
+_CHECK_NEXT_KEY2
     CMP #"S"
-    BEQ _DOWN
+    BNE _CHECK_NEXT_KEY3
+    JMP _DOWN
+
+_CHECK_NEXT_KEY3
 _SKIP_MOVEMENT
     JSR KEY_TO_A
     CMP #"R"
@@ -186,34 +198,78 @@ _NEW_GAME
 _UP
     LDA SPR0_Y
     CMP #21+25 
-    BEQ _POLL_KEYBOARD
+    BNE _MOVE_UP
+    JMP _POLL_KEYBOARD
+_MOVE_UP
     SEC
     SBC #32 
     STA SPR0_Y
+
+    LDA CARD_PTR16+0 ; CARD_PTR16-= 40*4 (four rows)
+    SEC
+    SBC #(40*4)
+    STA CARD_PTR16+0
+    LDA CARD_PTR16+1
+    SBC #0
+    STA CARD_PTR16+1
+
     JMP _POLL_KEYBOARD
 _DOWN
     LDA SPR0_Y
     CMP #21+25+(32*3)
-    BEQ _POLL_KEYBOARD
+    BNE _MOVE_DOWN
+    JMP _POLL_KEYBOARD
+_MOVE_DOWN
     CLC
     ADC #32 
     STA SPR0_Y
+
+    LDA CARD_PTR16+0 ; CARD_PTR16+= 40*4 (four rows)
+    CLC
+    ADC #(40*4)
+    STA CARD_PTR16+0
+    LDA CARD_PTR16+1
+    ADC #0
+    STA CARD_PTR16+1
+
     JMP _POLL_KEYBOARD
 _LEFT
     LDA SPR0_X
     CMP #12+8
-    BEQ _POLL_KEYBOARD
+    BNE _MOVE_LEFT
+    JMP _POLL_KEYBOARD
+_MOVE_LEFT
     SEC
     SBC #16 
     STA SPR0_X
+
+    LDA CARD_PTR16+0 ; CARD_PTR16-= 4 (four columns)
+    SEC
+    SBC #4
+    STA CARD_PTR16+0
+    LDA CARD_PTR16+1
+    SBC #0
+    STA CARD_PTR16+1
+
     JMP _POLL_KEYBOARD
 _RIGHT
     LDA SPR0_X
     CMP #12+8+(16*5)
-    BEQ _POLL_KEYBOARD    
+    BNE _MOVE_RIGHT
+    JMP _POLL_KEYBOARD
+_MOVE_RIGHT
     CLC
     ADC #16 
     STA SPR0_X
+
+    LDA CARD_PTR16+0 ; CARD_PTR16+= 4 (four columns)
+    CLC
+    ADC #4
+    STA CARD_PTR16+0
+    LDA CARD_PTR16+1
+    ADC #0
+    STA CARD_PTR16+1
+
     JMP _POLL_KEYBOARD
 
 ; helper for subroutine TEST_DRAW
