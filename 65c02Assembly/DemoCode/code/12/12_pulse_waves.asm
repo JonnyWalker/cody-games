@@ -32,7 +32,7 @@ MAIN                            ; The program starts running from here
             LDA #$09
             STA SID_V1FH
 
-            LDA #$0F            ; set duty cycle 5%
+            LDA #$0F            ; set duty cycle ~95% (3855/4096)
             STA SID_V1PL
             LDA #$0F
             STA SID_V1PH
