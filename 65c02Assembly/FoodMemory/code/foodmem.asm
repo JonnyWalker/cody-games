@@ -12,9 +12,9 @@ CARD_INDEX            = $D6   ; 0-5: used to check if one row of card tiles has 
 CHAR_ROM_PTR16        = $DB   ; 16-Bit variable. used to read tile char data from ROM
 CHAR_MEM_PTR16        = $DD   ; 16-Bit variable. used to write tile char data to memory
 COLOR_ROM_PTR         = $DF   ; 16-Bit variable. used to read tile color data from ROM
-FRAME_CTR             = $E1   ; 8-Bit variable. frame counter
-MOVEMENT_COOLDOWN_CTR = $E2   ; 8-Bit variable. used to slowdown movement
-CARD_PTR16            = $E3
+FRAME_CTR16           = $E1   ; 16-Bit variable. frame counter
+MOVEMENT_COOLDOWN_CTR = $E3   ; 8-Bit variable. used to slowdown movement
+CARD_PTR16            = $E4
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
@@ -70,7 +70,8 @@ _COPYSPRT
     LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
     STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)  
 
-    STZ FRAME_CTR             ; FRAME_CTR=0
+    STZ FRAME_CTR16+0         ; FRAME_CTR16=0
+    STZ FRAME_CTR16+1
     STZ MOVEMENT_COOLDOWN_CTR ; MOVEMENT_COOLDOWN_CTR=0
     STZ CARD_PTR16+0
     STZ CARD_PTR16+1
@@ -161,7 +162,11 @@ _loop                           ;
 
 _POLL_KEYBOARD
     JSR WAITBLANK       ; Wait for the next frame
-    INC FRAME_CTR       ; FRAME_CTR++
+
+    INC FRAME_CTR16+0       ; FRAME_CTR16++
+    BNE _FRAME_CTR_INC_DONE
+    INC FRAME_CTR16+1
+_FRAME_CTR_INC_DONE
 
     JSR KEY_TO_A        ; A = pressed key
 
