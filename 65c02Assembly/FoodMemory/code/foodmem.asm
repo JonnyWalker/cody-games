@@ -162,18 +162,18 @@ _POLL_KEYBOARD
     JSR WAITBLANK       ; Wait for the next frame
     INC FRAME_CTR       ; FRAME_CTR++
 
-    JSR KEY_TO_A
+    JSR KEY_TO_A        ; A = pressed key
+
     CMP #"R"
     BNE _CHECK_NEXT_KEY0
     JMP _NEW_GAME
 
 _CHECK_NEXT_KEY0
-    LDA MOVEMENT_COOLDOWN_CTR   ; if MOVEMENT_COOLDOWN_CTR == 0: check movement
+    LDX MOVEMENT_COOLDOWN_CTR   ; if MOVEMENT_COOLDOWN_CTR == 0: check movement
     BEQ _MOVEMENT
     DEC MOVEMENT_COOLDOWN_CTR   ; else: MOVEMENT_COOLDOWN_CTR-- and check keys again next frame
     JMP _POLL_KEYBOARD
 _MOVEMENT
-    JSR KEY_TO_A
     CMP #"W"
     BNE _CHECK_NEXT_MOVE_KEY0
     JMP _UP
