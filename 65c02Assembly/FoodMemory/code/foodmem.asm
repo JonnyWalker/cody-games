@@ -4,19 +4,21 @@
 .include "codyconstants.asm"
 
 ; MARK: - ZP Variables
-RANDOM_VALUE      = $D0   ; TODO: remove
-TILE_COUNTER      = $D1   ; 0-15: used to iterate over tiles in test draw
-SCREEN_PTR        = $D2   ; 16-Bit variable
-COLOR_MEM_PTR16   = $D4   ; 16-Bit variable. used to write color data to memory
-CARD_INDEX = $D6   ; 0-5: used to check if one row of card tiles has been drawn
-CHAR_ROM_PTR16    = $DB   ; 16-Bit variable. used to read tile char data from ROM
-CHAR_MEM_PTR16    = $DD   ; 16-Bit variable. used to write tile char data to memory
-COLOR_ROM_PTR     = $DF   ; 16-Bit variable. used to read tile color data from ROM
-FRAME_CTR         = $E1
-CARD_PTR16        = $E3
+RANDOM_VALUE          = $D0   ; TODO: remove
+TILE_COUNTER          = $D1   ; 0-15: used to iterate over tiles in test draw
+SCREEN_PTR            = $D2   ; 16-Bit variable
+COLOR_MEM_PTR16       = $D4   ; 16-Bit variable. used to write color data to memory
+CARD_INDEX            = $D6   ; 0-5: used to check if one row of card tiles has been drawn
+CHAR_ROM_PTR16        = $DB   ; 16-Bit variable. used to read tile char data from ROM
+CHAR_MEM_PTR16        = $DD   ; 16-Bit variable. used to write tile char data to memory
+COLOR_ROM_PTR         = $DF   ; 16-Bit variable. used to read tile color data from ROM
+FRAME_CTR             = $E1   ; 8-Bit variable. frame counter
+MOVEMENT_COOLDOWN_CTR = $E2   ; 8-Bit variable. used to slowdown movement
+CARD_PTR16            = $E3
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
+MOVEMENT_COOLDOWN = #10    ; how many frames between each movement action
 
 ; Program header for Cody Basic's loader (needs to be first)
 .WORD ADDR                      ; Starting address (just like KIM-1, Commodore, etc.)
@@ -157,44 +159,46 @@ _loop                           ;
     JSR TEST_DRAW
 
 _POLL_KEYBOARD
-    LDA FRAME_CTR       ; FRAME_CTR++
-    INC A
-    STA FRAME_CTR
-  
-    LDA FRAME_CTR       ; if FRAME_CTR % 4 != 0: skip movement
-    BIT #3
-    BNE _SKIP_MOVEMENT
+    JSR WAITBLANK       ; Wait for the next frame
+    INC FRAME_CTR       ; FRAME_CTR++
 
-    JSR KEY_TO_A
-    CMP #"W"
-    BNE _CHECK_NEXT_KEY0
-    JMP _UP
-_CHECK_NEXT_KEY0
-    CMP #"A"
-    BNE _CHECK_NEXT_KEY1
-    JMP _LEFT
-_CHECK_NEXT_KEY1
-    CMP #"D"
-    BNE _CHECK_NEXT_KEY2
-    JMP _RIGHT
-_CHECK_NEXT_KEY2
-    CMP #"S"
-    BNE _CHECK_NEXT_KEY3
-    JMP _DOWN
-
-_CHECK_NEXT_KEY3
-_SKIP_MOVEMENT
     JSR KEY_TO_A
     CMP #"R"
-    BEQ _NEW_GAME
+    BNE _CHECK_NEXT_KEY0
+    JMP _NEW_GAME
 
-    JSR WAITBLANK       ; Wait for the next frame
-
-
+_CHECK_NEXT_KEY0
+    LDA MOVEMENT_COOLDOWN_CTR   ; if MOVEMENT_COOLDOWN_CTR == 0: check movement
+    BEQ _MOVEMENT
+    DEC MOVEMENT_COOLDOWN_CTR   ; else: MOVEMENT_COOLDOWN_CTR-- and check keys again next frame
     JMP _POLL_KEYBOARD
-  
+_MOVEMENT
+    JSR KEY_TO_A
+    CMP #"W"
+    BNE _CHECK_NEXT_MOVE_KEY0
+    JMP _UP
+_CHECK_NEXT_MOVE_KEY0
+    CMP #"A"
+    BNE _CHECK_NEXT_MOVE_KEY1
+    JMP _LEFT
+_CHECK_NEXT_MOVE_KEY1
+    CMP #"D"
+    BNE _CHECK_NEXT_MOVE_KEY2
+    JMP _RIGHT
+_CHECK_NEXT_MOVE_KEY2
+    CMP #"S"
+    BNE _CHECK_NEXT_MOVE_KEY3
+    JMP _DOWN
+_CHECK_NEXT_MOVE_KEY3
+    JMP _POLL_KEYBOARD
+
 _NEW_GAME
     JMP SHOW_TITLE_SCREEN
+
+_SET_MOVEMENT_COOLDOWN
+    LDA MOVEMENT_COOLDOWN       ; MOVEMENT_COOLDOWN_CTR = MOVEMENT_COOLDOWN
+    STA MOVEMENT_COOLDOWN_CTR
+    JMP _POLL_KEYBOARD
 _UP
     LDA SPR0_Y
     CMP #21+25 
@@ -213,7 +217,7 @@ _MOVE_UP
     SBC #0
     STA CARD_PTR16+1
 
-    JMP _POLL_KEYBOARD
+    JMP _SET_MOVEMENT_COOLDOWN
 _DOWN
     LDA SPR0_Y
     CMP #21+25+(32*3)
@@ -232,7 +236,7 @@ _MOVE_DOWN
     ADC #0
     STA CARD_PTR16+1
 
-    JMP _POLL_KEYBOARD
+    JMP _SET_MOVEMENT_COOLDOWN
 _LEFT
     LDA SPR0_X
     CMP #12+8
@@ -251,7 +255,7 @@ _MOVE_LEFT
     SBC #0
     STA CARD_PTR16+1
 
-    JMP _POLL_KEYBOARD
+    JMP _SET_MOVEMENT_COOLDOWN
 _RIGHT
     LDA SPR0_X
     CMP #12+8+(16*5)
@@ -270,7 +274,7 @@ _MOVE_RIGHT
     ADC #0
     STA CARD_PTR16+1
 
-    JMP _POLL_KEYBOARD
+    JMP _SET_MOVEMENT_COOLDOWN
 
 ; helper for subroutine TEST_DRAW
 DRAW_TILE
