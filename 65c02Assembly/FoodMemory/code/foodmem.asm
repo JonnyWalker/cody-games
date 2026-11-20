@@ -12,6 +12,7 @@ CARD_INDEX = $D6   ; 0-5: used to check if one row of card tiles has been drawn
 CHAR_ROM_PTR16    = $DB   ; 16-Bit variable. used to read tile char data from ROM
 CHAR_MEM_PTR16    = $DD   ; 16-Bit variable. used to write tile char data to memory
 COLOR_ROM_PTR     = $DF   ; 16-Bit variable. used to read tile color data from ROM
+FRAME_CTR         = $E1
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
@@ -47,7 +48,26 @@ MAIN                    ; The program starts running from here
     LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)
     STA VIA_DDRA        ; This is required for keyboard input
 
+    LDX #0              ; Copy sprite data into video memory
+_COPYSPRT   
+    LDA SPRITEDATA,X
+    STA $A400,X         ; sprite pixel data location. Page 327 and 535 
+    INX
+    CPX #64
+    BNE _COPYSPRT
 
+    LDA #$00            ; Sprite bank 0, white as common sprite color 
+    STA VID_SPRC        ; VID_SPRC=$D006 (see codyconstants.asm)
+    LDA #12+8           ; sprite X
+    STA SPR0_X          ; SPR0_X=$D080 (see codyconstants.asm)
+    LDA #21+25          ; sprite Y
+    STA SPR0_Y          ; SPR0_Y=$D081 (see codyconstants.asm)
+    LDA #$11            ; white=1 color 1, white=1 color 2 
+    STA SPR0_COL        ; SPR0_COL=$D082 (see codyconstants.asm)
+    LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
+    STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)  
+
+    STZ FRAME_CTR       ; FRAME_CTR=0
 
 
 
@@ -72,6 +92,7 @@ _NEW_GAME
     LDA #$10
     ; replace all characters with empty character
     JSR CLEAR_SCREEN
+
 
 
 
@@ -133,11 +154,67 @@ _loop                           ;
     JSR TEST_DRAW
 
 _POLL_KEYBOARD
+    LDA FRAME_CTR       ; FRAME_CTR++
+    INC A
+    STA FRAME_CTR
+  
+    LDA FRAME_CTR       ; if FRAME_CTR % 4 != 0: skip movement
+    BIT #3
+    BNE _SKIP_MOVEMENT
+
+    JSR KEY_TO_A
+    CMP #"W"
+    BEQ _UP
+    CMP #"A"
+    BEQ _LEFT
+    CMP #"D"
+    BEQ _RIGHT
+    CMP #"S"
+    BEQ _DOWN
+_SKIP_MOVEMENT
     JSR KEY_TO_A
     CMP #"R"
-    BNE _POLL_KEYBOARD
+    BEQ _NEW_GAME
 
+    JSR WAITBLANK       ; Wait for the next frame
+
+
+    JMP _POLL_KEYBOARD
+  
+_NEW_GAME
     JMP SHOW_TITLE_SCREEN
+_UP
+    LDA SPR0_Y
+    CMP #21+25 
+    BEQ _POLL_KEYBOARD
+    SEC
+    SBC #32 
+    STA SPR0_Y
+    JMP _POLL_KEYBOARD
+_DOWN
+    LDA SPR0_Y
+    CMP #21+25+(32*3)
+    BEQ _POLL_KEYBOARD
+    CLC
+    ADC #32 
+    STA SPR0_Y
+    JMP _POLL_KEYBOARD
+_LEFT
+    LDA SPR0_X
+    CMP #12+8
+    BEQ _POLL_KEYBOARD
+    SEC
+    SBC #16 
+    STA SPR0_X
+    JMP _POLL_KEYBOARD
+_RIGHT
+    LDA SPR0_X
+    CMP #12+8+(16*5)
+    BEQ _POLL_KEYBOARD    
+    CLC
+    ADC #16 
+    STA SPR0_X
+    JMP _POLL_KEYBOARD
 
 ; helper for subroutine TEST_DRAW
 DRAW_TILE
@@ -450,6 +527,29 @@ LEVEL
     .BYTE 0,0,0,0,0,0  ; 0 if no card assigned,
     .BYTE 0,0,0,0,0,0  ; value 1...12 otherwise.
 
+SPRITEDATA
+    .BYTE %00_00_00_00, %11_00_00_00, %00_00_00_00
+    .BYTE %00_00_00_11, %11_11_00_00, %00_00_00_00
+    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
+    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
+    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
+    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
+    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
+    .BYTE %00_11_00_11, %01_11_11_00, %11_00_00_00
+    .BYTE %11_11_11_11, %01_11_11_11, %11_11_11_00
+    .BYTE %11_01_11_11, %01_11_01_11, %01_11_11_11
+    .BYTE %11_01_01_11, %01_11_01_11, %01_11_01_11
+    .BYTE %11_11_01_11, %01_11_01_11, %01_11_01_11
+    .BYTE %00_11_01_01, %01_01_01_11, %01_11_01_11
+    .BYTE %00_11_01_01, %01_01_01_01, %01_01_01_11
+    .BYTE %00_11_01_01, %01_01_01_01, %01_01_01_11
+    .BYTE %00_11_11_01, %01_01_01_01, %01_01_01_11
+    .BYTE %00_11_11_01, %01_01_01_01, %01_01_01_11
+    .BYTE %00_00_11_01, %01_01_01_01, %01_01_11_11
+    .BYTE %00_00_11_11, %01_01_01_01, %01_11_11_11
+    .BYTE %00_00_11_11, %11_11_11_11, %11_11_11_00
+    .BYTE %00_00_00_11, %11_11_11_11, %11_00_00_00
+    .BYTE %00_00_00_00
 
 
 ; End of the entire program
