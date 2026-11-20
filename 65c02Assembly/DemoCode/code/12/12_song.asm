@@ -28,7 +28,7 @@ MAIN                            ; The program starts running from here
             LDA #15             ; set volume to max
             STA SID_FVOL
 
-            LDA #$FF            ; duty cycle 0.3%
+            LDA #$FF            ; duty cycle ~6% (255/4096)
             STA SID_V1PL
             LDA #$00
             STA SID_V1PH
