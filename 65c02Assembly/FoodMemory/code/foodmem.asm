@@ -59,10 +59,8 @@ _COPYSPRT
 
     LDA #$00            ; Sprite bank 0, white as common sprite color 
     STA VID_SPRC        ; VID_SPRC=$D006 (see codyconstants.asm)
-    LDA #12+8           ; sprite X
-    STA SPR0_X          ; SPR0_X=$D080 (see codyconstants.asm)
-    LDA #21+25          ; sprite Y
-    STA SPR0_Y          ; SPR0_Y=$D081 (see codyconstants.asm)
+    STZ SPR0_X          ; sprite X SPR0_X=$D080 (see codyconstants.asm)
+    STZ SPR0_Y          ; sprite Y SPR0_Y=$D081 (see codyconstants.asm)
     LDA #$11            ; white=1 color 1, white=1 color 2 
     STA SPR0_COL        ; SPR0_COL=$D082 (see codyconstants.asm)
     LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
@@ -75,6 +73,9 @@ _COPYSPRT
 
 
 SHOW_TITLE_SCREEN
+    STZ SPR0_X          ; Hide cursor during title screen by setting sprite pos to (0,0)
+    STZ SPR0_Y
+
     ; overwrites all other graphics
     JSR LOAD_CODSCII_TO_CHAR_MEM
 
@@ -155,6 +156,15 @@ _loop                           ;
 
     ; draw open cards (only a debug subroutine)
     JSR TEST_DRAW
+
+    ; Show cursor
+    LDA #12+8           ; sprite X
+    STA SPR0_X          ; SPR0_X=$D080 (see codyconstants.asm)
+    LDA #21+25          ; sprite Y
+    STA SPR0_Y          ; SPR0_Y=$D081 (see codyconstants.asm)
+
+    STZ CARD_PTR16+0    ; Keep CARD_PTR16 in sync with cursor pos
+    STZ CARD_PTR16+1
 
 _POLL_KEYBOARD
     LDA FRAME_CTR       ; FRAME_CTR++
