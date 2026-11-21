@@ -94,19 +94,24 @@ MAIN                            ; The program starts running from here
 .include "graphics.asm"
 
 
+; C4$, C4$, C4$, D4$, F4$
+; A4$, A4$, C4$, C4$, C4$
+; D4$, F4$, G4$, C4$, C4$,
+; C4$, D4$, F4$, G4$, G4$
+; G4$, A4 , F4$, D4$, F4$
 FREQUENCY_HI 
-.Byte 18, 18, 18, 20, 24
-.BYTE 30, 30, 18, 18, 18
-.BYTE 20, 24, 27, 18, 18 
-.BYTE 18, 20, 24, 27, 27
-.BYTE 27, 30, 24, 20, 24
+.Byte $12, $12, $12, $14, $18
+.BYTE $1E, $1E, $12, $12, $12
+.BYTE $14, $18, $1B, $12, $12 
+.BYTE $12, $14, $18, $1B, $1B
+.BYTE $1B, $1E, $18, $14, $18
 
 FREQUENCY_LO 
-.BYTE 104, 104, 104, 169, 146
-.BYTE 245, 245, 104, 104, 104
-.BYTE 169, 146, 148, 104, 104
-.BYTE 104, 169, 146, 148, 148
-.BYTE 148, 245, 146, 169, 146
+.BYTE $68, $68, $68, $A9, $92
+.BYTE $F5, $F5, $68, $68, $68
+.BYTE $A9, $92, $94, $68, $68
+.BYTE $68, $A9, $92, $94, $94
+.BYTE $94, $F5, $92, $A9, $92
 
 ; Page 360: adjust time 250->15 frames, 500->30 frames, 1000->60 frames
 TUNE_LENGTH 
