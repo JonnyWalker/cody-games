@@ -3,7 +3,11 @@
 # input: a 4 color bmp file
 # only use the colors white, blue, red and black
 import pygame
-FILE = "sprites/ship.bmp"
+import sys
+if len(sys.argv) > 1:
+    FILE = sys.argv[1]
+else:
+    FILE = "sprites/cursor.bmp"
 LINE_NUMBER = 100
 TRANSPARENT = (0xFF, 0xFF, 0xFF)  # White
 COLOR01 = (0x00, 0x00, 0xFF)      # Blue
@@ -60,6 +64,20 @@ for _ in range(8):
             code += ","
         index += 1
     code += "\n"
+print(code)
+
+# gernate Assembly code
+code = "; assembly code: \n"
+index = 0
+for _ in range(20):
+    code += ".BYTE "
+    for i in range(3):
+        code += f"{int(data[index]):08b}"
+        if i != 2:
+            code += ","
+        index += 1
+    code += "\n"
+code += f".BYTE {int(0):08b}\n"
 print(code)
 
 # draw image and wait for quit
