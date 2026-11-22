@@ -51,29 +51,13 @@ MAIN                    ; The program starts running from here
     LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)
     STA VIA_DDRA        ; This is required for keyboard input
 
-    LDX #0              ; Copy sprite data into video memory
-_COPYSPRT   
-    LDA SPRITEDATA,X
-    STA $A400,X         ; sprite pixel data location. Page 327 and 535 
-    INX
-    CPX #64
-    BNE _COPYSPRT
-
-    LDA #$00            ; Sprite bank 0, white as common sprite color 
-    STA VID_SPRC        ; VID_SPRC=$D006 (see codyconstants.asm)
-    ; not setting sprite X (SPR0_X) here. handled in SHOW_TITLE_SCREEN
-    ; not setting sprite Y (SPR0_Y) here. handled in SHOW_TITLE_SCREEN
-    LDA #$11            ; white=1 color 1, white=1 color 2 
-    STA SPR0_COL        ; SPR0_COL=$D082 (see codyconstants.asm)
-    LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
-    STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)  
+    JSR INIT_SPRITES
 
     STZ FRAME_CTR16+0         ; FRAME_CTR16=0
     STZ FRAME_CTR16+1
     STZ MOVEMENT_COOLDOWN_CTR ; MOVEMENT_COOLDOWN_CTR=0
     STZ CARD_PTR16+0
     STZ CARD_PTR16+1
-
 
 
 SHOW_TITLE_SCREEN
@@ -89,483 +73,74 @@ SHOW_TITLE_SCREEN
     #PRINT Text0, 0,  1, 11 ; prints "Food Memory"
     #PRINT Text1, 0, 23, 24 ; prints "PRESS SPACE TO CONTINUE."
 
-  _WAIT_FOR_SPACE
+_WAIT_FOR_SPACE
     ; exit loop on space key
     JSR KEY_TO_A
     CMP #$20
-  BNE _WAIT_FOR_SPACE
+    BNE _WAIT_FOR_SPACE
 
-_NEW_GAME
     ; clear with white=1 and black=0
     LDA #$10
     ; replace all characters with empty character
     JSR CLEAR_SCREEN
-
-
-
-
-INIT_RANDOM_LEVEL               ; idea: for all cards,
-                                ; draw random index
-
-    LDX #23
-_zero
-    STZ LEVEL,X
-    DEX
-    BPL _zero
-                                ;
-    LDY #25                     ; 24 iterations.
-                                ; we start at 25 so that Y / 2
-                                ; produces card values 12...1,
-                                ; each exactly twice. if we
-                                ; started at 24 we would produce one 0.
-_loop                           ;
-    JSR GET_RANDOM_BYTE_TO_A    ; get random byte, and convert to
-    TAX                         ; index into level. mod 24 using
-    LDA MOD_24,X                ; a lookup table.
-    TAX                         ;
-    LDA LEVEL,X                 ; check if card at that index is 0.
-    BNE _loop                   ; if its not, then theres already a
-                                ; card assigned; try again.
-    TYA                         ;
-    LSR                         ; div 2 to map 25...1 to 12...1
-    STA LEVEL,X                 ; store card id at chosen index.
-    DEY                         ;
-    CPY #1                      ;
-    BNE _loop                   ;
-
-    ; randomly select one of
-    ; 4 available memory sets
-    JSR GET_RANDOM_BYTE_TO_A
-    AND #3
-    ASL
-    TAX
-    LDA MEMORY_SETS_PIXELS,X
-    LDY MEMORY_SETS_COLORS,X
-    STA CHAR_ROM_PTR16 + 0
-    STY COLOR_ROM_PTR + 0
-    INX
-    LDA MEMORY_SETS_PIXELS,X
-    LDY MEMORY_SETS_COLORS,X
-    STA CHAR_ROM_PTR16 + 1
-    STY COLOR_ROM_PTR + 1
-
-    ; set pointer to character memory $C800
-    LDA #$00
-    STA CHAR_MEM_PTR16+0
-    LDA #$C8
-    STA CHAR_MEM_PTR16+1
-
+    ; compute random card positions
+    JSR COMPUTE_RANDOM_LEVEL
+    ; compute random card images
+    JSR COMPUTE_RANDOM_TILE_SET
     ; load tile set from game ROM to memory
     JSR COPY_ALL_CHAR_TO_MEMORY
-
     ; draw open cards (only a debug subroutine)
     JSR TEST_DRAW
-
     ; Show cursor
     LDA #12+8           ; sprite X
     STA SPR0_X          ; SPR0_X=$D080 (see codyconstants.asm)
     LDA #21+25          ; sprite Y
     STA SPR0_Y          ; SPR0_Y=$D081 (see codyconstants.asm)
-
     STZ CARD_PTR16+0    ; Keep CARD_PTR16 in sync with cursor pos
     STZ CARD_PTR16+1
 
-_POLL_KEYBOARD
+_GAME_LOOP
     JSR WAITBLANK       ; Wait for the next frame
 
     INC FRAME_CTR16+0       ; FRAME_CTR16++
     BNE _FRAME_CTR_INC_DONE ; If the lower half of the frame counter is zero we had an overflow and...
     INC FRAME_CTR16+1       ; ...we also have to increment the upper half
 _FRAME_CTR_INC_DONE
-
     JSR KEY_TO_A        ; A = pressed key
-
+    JSR EVAL_KEYBOARD
+    JSR KEY_TO_A        ; A = pressed key   
     CMP #"R"
-    BNE _CHECK_NEXT_KEY0
-    JMP _NEW_GAME
-
-_CHECK_NEXT_KEY0
-    LDX MOVEMENT_COOLDOWN_CTR   ; if MOVEMENT_COOLDOWN_CTR == 0: check movement
-    BEQ _MOVEMENT
-    DEC MOVEMENT_COOLDOWN_CTR   ; else: MOVEMENT_COOLDOWN_CTR-- and check keys again next frame
-    JMP _POLL_KEYBOARD
-_MOVEMENT
-    CMP #"W"
-    BNE _CHECK_NEXT_MOVE_KEY0
-    JMP _UP
-_CHECK_NEXT_MOVE_KEY0
-    CMP #"A"
-    BNE _CHECK_NEXT_MOVE_KEY1
-    JMP _LEFT
-_CHECK_NEXT_MOVE_KEY1
-    CMP #"D"
-    BNE _CHECK_NEXT_MOVE_KEY2
-    JMP _RIGHT
-_CHECK_NEXT_MOVE_KEY2
-    CMP #"S"
-    BNE _CHECK_NEXT_MOVE_KEY3
-    JMP _DOWN
-_CHECK_NEXT_MOVE_KEY3
-    JMP _POLL_KEYBOARD
-
+    BEQ _NEW_GAME
+    JMP _GAME_LOOP
 _NEW_GAME
-    JMP SHOW_TITLE_SCREEN
+    JMP SHOW_TITLE_SCREEN 
+    
 
-_SET_MOVEMENT_COOLDOWN
-    LDA MOVEMENT_COOLDOWN       ; MOVEMENT_COOLDOWN_CTR = MOVEMENT_COOLDOWN
-    STA MOVEMENT_COOLDOWN_CTR
-    JMP _POLL_KEYBOARD
-_UP
-    LDA SPR0_Y
-    CMP #21+25 
-    BNE _MOVE_UP
-    JMP _POLL_KEYBOARD
-_MOVE_UP
-    SEC
-    SBC #32 
-    STA SPR0_Y
+; MARK: Init
 
-    LDA CARD_PTR16+0 ; CARD_PTR16-= 40*4 (four rows)
-    SEC
-    SBC #(40*4)
-    STA CARD_PTR16+0
-    LDA CARD_PTR16+1
-    SBC #0
-    STA CARD_PTR16+1
-
-    JMP _SET_MOVEMENT_COOLDOWN
-_DOWN
-    LDA SPR0_Y
-    CMP #21+25+(32*3)
-    BNE _MOVE_DOWN
-    JMP _POLL_KEYBOARD
-_MOVE_DOWN
-    CLC
-    ADC #32 
-    STA SPR0_Y
-
-    LDA CARD_PTR16+0 ; CARD_PTR16+= 40*4 (four rows)
-    CLC
-    ADC #(40*4)
-    STA CARD_PTR16+0
-    LDA CARD_PTR16+1
-    ADC #0
-    STA CARD_PTR16+1
-
-    JMP _SET_MOVEMENT_COOLDOWN
-_LEFT
-    LDA SPR0_X
-    CMP #12+8
-    BNE _MOVE_LEFT
-    JMP _POLL_KEYBOARD
-_MOVE_LEFT
-    SEC
-    SBC #16 
-    STA SPR0_X
-
-    LDA CARD_PTR16+0 ; CARD_PTR16-= 4 (four columns)
-    SEC
-    SBC #4
-    STA CARD_PTR16+0
-    LDA CARD_PTR16+1
-    SBC #0
-    STA CARD_PTR16+1
-
-    JMP _SET_MOVEMENT_COOLDOWN
-_RIGHT
-    LDA SPR0_X
-    CMP #12+8+(16*5)
-    BNE _MOVE_RIGHT
-    JMP _POLL_KEYBOARD
-_MOVE_RIGHT
-    CLC
-    ADC #16 
-    STA SPR0_X
-
-    LDA CARD_PTR16+0 ; CARD_PTR16+= 4 (four columns)
-    CLC
-    ADC #4
-    STA CARD_PTR16+0
-    LDA CARD_PTR16+1
-    ADC #0
-    STA CARD_PTR16+1
-
-    JMP _SET_MOVEMENT_COOLDOWN
-
-; helper for subroutine TEST_DRAW
-DRAW_TILE
-PHY
-PHX
-TXA
-TAY
-    ; pixel = A = LEVEL[CARD_INDEX] * 16 + TILE_COUNTER (each card is 4x4=16 tiles)
-    LDA LEVEL, Y
-    ASL
-    ASL
-    ASL
-    ASL
-    CLC
-    ADC TILE_COUNTER
-
-    ; SCREEN_PTR[A] = pixel
-    ; draw pixel pattern
-    STA (SCREEN_PTR)
-
-    ; compute color of current tile
-    ; color = COLOR_DATA[LEVEL[CARD_INDEX] * 16 + TILE_COUNTER]  (each card is 4x4=16 tiles)
-    LDA LEVEL, Y
-    ASL
-    ASL
-    ASL
-    ASL
-    CLC
-    ADC TILE_COUNTER
-    PHY
-    TAY
-
-    ; color = COLOR_ROM_PTR[Y]
-    LDA (COLOR_ROM_PTR), Y
-    PLY
-
-    ; COLOR_MEM_PTR16[A] = color
-    ; set color for this tile
-    STA (COLOR_MEM_PTR16)
-
-    ; SCREEN_PTR++
-    CLC
-    LDA SCREEN_PTR+0
-    ADC #1
-    STA SCREEN_PTR+0
-    LDA SCREEN_PTR+1
-    ADC #0
-    STA SCREEN_PTR+1
-
-    ; COLOR_MEM_PTR16++
-    CLC
-    LDA COLOR_MEM_PTR16+0
-    ADC #1
-    STA COLOR_MEM_PTR16+0
-    LDA COLOR_MEM_PTR16+1
-    ADC #0
-    STA COLOR_MEM_PTR16+1
-
-    ; TILE_COUNTER++
-    CLC
-    LDA TILE_COUNTER
-    ADC #$01
-    STA TILE_COUNTER
-
-    PLX
-    PLY
-    RTS
-
-
-; This subroutine copies all tile pixels from ROM to Memory by using two 16-Bit pointers.
-; Assumes CHAR_ROM_PTR16 (source) and CHAR_MEM_PTR16 (destination) is already initialized.
-; 7*256 Bytes are copied
-COPY_ALL_CHAR_TO_MEMORY
-  LDX #0
-  _COPY_ALL_CHAR_TO_MEMORY
-    LDY #0
-  
-    ; inner loop
-    _COPY_256_CHAR_TO_MEMORY
-      LDA (CHAR_ROM_PTR16),Y
-      STA (CHAR_MEM_PTR16), Y
-      INY
-    BNE _COPY_256_CHAR_TO_MEMORY
-
-    ; CHAR_PTR16 += 256 (by inc high byte)
-    LDA CHAR_ROM_PTR16+1
-    INC A
-    STA CHAR_ROM_PTR16+1
-
-    ; CHAR_MEM_PTR16 += 256 (by inc high byte)
-    LDA CHAR_MEM_PTR16+1
-    INC A
-    STA CHAR_MEM_PTR16+1
-
-    INX
-    CPX #$07
-  BNE _COPY_ALL_CHAR_TO_MEMORY
-  RTS
-
-; TILE_COUNTER: from 0-15. Index in 4x4 (=16) tiles card image
-; used to compute pixels and color
-TEST_DRAW
-    ; SCREEN_PTR = $C400
-    LDA #$00
-    STA SCREEN_PTR+0
-    LDA #$C4
-    STA SCREEN_PTR+1
-
-    ; COLOR_MEM_PTR16 = $D800
-    LDA #$00
-    STA COLOR_MEM_PTR16+0
-    LDA #$D8
-    STA COLOR_MEM_PTR16+1
-
-    ; Y = 0 (row counter)
-    LDY #$00
-
-    ; TILE_COUNTER = 0 (counts from 0 to 15 to draw 16 tiles for each card)
-    LDA #$00
-    STA TILE_COUNTER
-
-    ; X = 0 (card index)
-    LDX #$00
-
-  ; This loop draws all 6x4 cards of 4x4 tiles each (4x4x6x4 tiles)
-  _ALL_ROWS
-  ; This loop draws one row of cards 6*4x4 tiles each
-  _FOUR_ROWS
-    LDA #$00
-    STA CARD_INDEX
-  ; This loop draws one row of 4*6 tiles
-  _ROW
-    ; Draw four tiles (of one card)
-    ; notice the side-effects on the variables in the subroutine
-    JSR DRAW_TILE
-    JSR DRAW_TILE
-    JSR DRAW_TILE
-    JSR DRAW_TILE
-
-    ; CARD_INDEX = CARD_INDEX + 1
-    LDA CARD_INDEX
-    CLC
-    ADC #$01
-    STA CARD_INDEX
-
-    ; TILE_COUNTER = TILE_COUNTER - 4  (next tile in row starts)
-    LDA TILE_COUNTER
-    SEC
-    SBC #$04
-    STA TILE_COUNTER
-
-    ; X++
-    INX
-
-    ; check if tiles of one row are drawn (6 cards each row)
-    LDA CARD_INDEX
-    CMP #6
-    BEQ _END_ROW
-    JMP _ROW
-  _END_ROW
-    ; 24(=4*6) tiles of one row have now been drawn.
-
-    ; TILE_COUNTER = TILE_COUNTER + 4
-    LDA TILE_COUNTER
-    CLC
-    ADC #$04
-    STA TILE_COUNTER
-
-    ; SCREEN_PTR = SCREEN_PTR + 16
-    ; (skip tiles to go to the beginning of the next row)
-    CLC
-    LDA SCREEN_PTR+0
-    ADC #$10
-    STA SCREEN_PTR+0
-    LDA SCREEN_PTR+1
-    ADC #0
-    STA SCREEN_PTR+1
-
-    ; COLOR_MEM_PTR16 = COLOR_MEM_PTR16 + 16
-    ; (skip tiles to go to the beginning of the next row)
-    CLC
-    LDA COLOR_MEM_PTR16+0
-    ADC #$10
-    STA COLOR_MEM_PTR16+0
-    LDA COLOR_MEM_PTR16+1
-    ADC #0
-    STA COLOR_MEM_PTR16+1
-
-    ; X=X-6 (reset X for next part of cards)
-    TXA
-    SEC
-    SBC CARDS_EACH_ROW
-    TAX
-
-    ; Y%4==0? (4 rows drawn)
-    INY
-    TYA
-    AND #%00000011
-    BEQ _END_FOUR_ROWS
-    JMP _FOUR_ROWS
-  _END_FOUR_ROWS
-    ; CARDS_EACH_ROW cards of 4x4 tiles have been drawn
-
-    ; X=X+CARDS_EACH_ROW (next set of cards processed in next interation)
-    TXA
-    CLC
-    ADC CARDS_EACH_ROW
-    TAX
-
-    ; TILE_COUNTER = 0
-    LDA #$00
-    STA TILE_COUNTER
-
-    ; Y==16? (4 card rows == 16 tile rows)
-    CPY #16
-    BEQ _END_DRAW
-    JMP _ALL_ROWS
- _END_DRAW
-    ; all cards have been drawn
-
-    RTS
-
-
-
-
-
+.include "init_game.asm"
 
 ; MARK: Drawing
 
-DRAW_CARD_AT_XY
+.include "graphics.asm"
+.include "draw_cards.asm"
 
+; MARK: I/0
 
-
-
-
-
-
-
-
-
-
-
-
-
+.include "key_input.asm"
+.include "input.asm"
 
 ; MARK: Utilities
 
-; use noise for random value
-GET_RANDOM_BYTE_TO_A
-  ; switch voice 3 to noise mode with maximum frequency to generate random values in SID_V3OC ($D41B)
-  LDA #$FF
-  STA SID_V3FL
-  LDA #$FF
-  STA SID_V3FH
-  LDA #$80
-  STA SID_V3CT
-  LDA SID_V3OC
-  RTS
+.include "random.asm"
 
-
-
-
-
-
-
-
-; MARK: - Data Segment
-
-.include "graphics.asm"
-.include "key_input.asm"
+; MARK: Data Segment
 
 .include "tile_set0.asm"
 .include "tile_set1.asm"
 .include "tile_set2.asm"
 .include "tile_set3.asm"
+.include "sprites.asm"
 
 Text0 .TEXT "Food Memory"
 Text1 .TEXT "PRESS SPACE TO CONTINUE."
@@ -602,31 +177,6 @@ LEVEL
     .BYTE 0,0,0,0,0,0  ;
     .BYTE 0,0,0,0,0,0  ; 0 if no card assigned,
     .BYTE 0,0,0,0,0,0  ; value 1...12 otherwise.
-
-SPRITEDATA
-    .BYTE %00_00_00_00, %11_00_00_00, %00_00_00_00
-    .BYTE %00_00_00_11, %11_11_00_00, %00_00_00_00
-    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
-    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
-    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
-    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
-    .BYTE %00_00_00_11, %01_11_00_00, %00_00_00_00
-    .BYTE %00_11_00_11, %01_11_11_00, %11_00_00_00
-    .BYTE %11_11_11_11, %01_11_11_11, %11_11_11_00
-    .BYTE %11_01_11_11, %01_11_01_11, %01_11_11_11
-    .BYTE %11_01_01_11, %01_11_01_11, %01_11_01_11
-    .BYTE %11_11_01_11, %01_11_01_11, %01_11_01_11
-    .BYTE %00_11_01_01, %01_01_01_11, %01_11_01_11
-    .BYTE %00_11_01_01, %01_01_01_01, %01_01_01_11
-    .BYTE %00_11_01_01, %01_01_01_01, %01_01_01_11
-    .BYTE %00_11_11_01, %01_01_01_01, %01_01_01_11
-    .BYTE %00_11_11_01, %01_01_01_01, %01_01_01_11
-    .BYTE %00_00_11_01, %01_01_01_01, %01_01_11_11
-    .BYTE %00_00_11_11, %01_01_01_01, %01_11_11_11
-    .BYTE %00_00_11_11, %11_11_11_11, %11_11_11_00
-    .BYTE %00_00_00_11, %11_11_11_11, %11_00_00_00
-    .BYTE %00_00_00_00
-
 
 ; End of the entire program
 LAST
