@@ -1,3 +1,4 @@
+; MARK: COPY_ALL_CHAR_TO_MEMORY
 ; This subroutine copies all tile pixels from ROM to memory by using two 16-Bit pointers.
 ; Assumes CHAR_ROM_PTR16 (source) is already initialized.
 ; Assumes CHAR_MEM_PTR16 (destination) is $C800 
@@ -35,6 +36,7 @@ COPY_ALL_CHAR_TO_MEMORY
     BNE _COPY_ALL_CHAR_TO_MEMORY
     RTS
 
+; MARK: INIT_SPRITES
 INIT_SPRITES
     LDX #0              ; Copy sprite data into video memory
 _COPYSPRT   
@@ -53,3 +55,4 @@ _COPYSPRT
     LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
     STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)  
     RTS
+  

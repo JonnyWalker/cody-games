@@ -4,6 +4,10 @@
 .include "codyconstants.asm"
 
 ; MARK: - ZP Variables
+MEMSPTR   = $20       ; The source pointer for memory-related utility routines (2 bytes)
+MEMDPTR   = $22       ; The destination pointer for memory-related utility routines (2 bytes)
+MEMSIZE   = $24       ; The size of memory to move for memory-related utility routines (2 bytes)
+
 RANDOM_VALUE          = $D0   ; TODO: remove
 TILE_COUNTER          = $D1   ; 0-15: used to iterate over tiles in test draw
 SCREEN_PTR            = $D2   ; 16-Bit variable
@@ -19,6 +23,8 @@ CARD_PTR16            = $E4
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
 MOVEMENT_COOLDOWN = #10    ; how many frames between each movement action
+SCRRAM    = $A000               ; Screen memory location
+COLRAM    = $D800               ; Color memory location
 
 ; Program header for Cody Basic's loader (needs to be first)
 .WORD ADDR                      ; Starting address (just like KIM-1, Commodore, etc.)
@@ -39,45 +45,41 @@ PRINT .macro text, column, row, length
     .endmacro
 
 MAIN                    ; The program starts running from here
-    LDA #$E1            ; Set border color (Bits 0-3) to white=1
+    LDA #$E0            ; Set border color (Bits 0-3) to black=0
                         ; and set color memory to $D800 (A000+14*1024=D800), E=14
     STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)
-    LDA #$95            ; Set character memory to $C800 (A000+5*2048=C800)
-                        ; and set screen memory location $C400 (A000+9*1024=C400)
-    STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
     LDA #$01            ; Store shared colors (black=0 and white=1)
     STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
 
     LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)
     STA VIA_DDRA        ; This is required for keyboard input
 
-    JSR INIT_SPRITES
-
+SHOW_TITLE_SCREEN
     STZ FRAME_CTR16+0         ; FRAME_CTR16=0
     STZ FRAME_CTR16+1
     STZ MOVEMENT_COOLDOWN_CTR ; MOVEMENT_COOLDOWN_CTR=0
     STZ CARD_PTR16+0
     STZ CARD_PTR16+1
 
-
-SHOW_TITLE_SCREEN
     STZ SPR0_X          ; Hide cursor during title screen by setting sprite pos to (0,0)
     STZ SPR0_Y
+    JSR SHOW_TITLE
 
-    ; overwrites all other graphics
-    JSR LOAD_CODSCII_TO_CHAR_MEM
-
-    LDA #$10            ; clear with white=1 and black=0
-    JSR CLEAR_SCREEN    ; replace all characters with empty character
-
-    #PRINT Text0, 0,  1, 11 ; prints "Food Memory"
-    #PRINT Text1, 0, 23, 24 ; prints "PRESS SPACE TO CONTINUE."
 
 _WAIT_FOR_SPACE
     ; exit loop on space key
     JSR KEY_TO_A
     CMP #$20
     BNE _WAIT_FOR_SPACE
+
+    ; disbale bitmap mode
+    JSR WAITBLANK       ; Wait for the next frame
+    LDA #$00
+    STA VID_CNTL
+    LDA #$95            ; Set character memory to $C800 (A000+5*2048=C800)
+                        ; and set screen memory location $C400 (A000+9*1024=C400)
+    STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
+    JSR INIT_SPRITES
 
     ; clear with white=1 and black=0
     LDA #$10
@@ -124,6 +126,7 @@ _NEW_GAME
 
 .include "graphics.asm"
 .include "draw_cards.asm"
+.include "title_screen.asm"
 
 ; MARK: I/0
 
