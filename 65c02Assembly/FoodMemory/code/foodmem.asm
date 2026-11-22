@@ -59,8 +59,8 @@ _COPYSPRT
 
     LDA #$00            ; Sprite bank 0, white as common sprite color 
     STA VID_SPRC        ; VID_SPRC=$D006 (see codyconstants.asm)
-    STZ SPR0_X          ; sprite X SPR0_X=$D080 (see codyconstants.asm)
-    STZ SPR0_Y          ; sprite Y SPR0_Y=$D081 (see codyconstants.asm)
+    ; not setting sprite X (SPR0_X) here. handled in SHOW_TITLE_SCREEN
+    ; not setting sprite Y (SPR0_Y) here. handled in SHOW_TITLE_SCREEN
     LDA #$11            ; white=1 color 1, white=1 color 2 
     STA SPR0_COL        ; SPR0_COL=$D082 (see codyconstants.asm)
     LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
