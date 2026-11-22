@@ -21,8 +21,6 @@ PAUSE_TIME  = #$01
 .LOGICAL    ADDR                ; The actual program gets loaded at ADDR
 
 MAIN                            ; The program starts running from here   
-
-            LDX #$00            ; clear all registers (sounds and settings)
             JSR SOUND_INIT
     _LOOP    
             JSR WAITBLANK       ; Wait for the next frame
@@ -32,6 +30,7 @@ MAIN                            ; The program starts running from here
 
 ; Subroutine to be used before calling PLAY_SOUND
 SOUND_INIT
+            LDX #$00            ; clear all registers (sounds and settings)
     _CLEAR
             STZ SID_BASE, X
             INX
