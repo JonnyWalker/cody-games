@@ -117,7 +117,7 @@ PLAY_SOUND
 
 ; C4$, C4$, C4$, D4$, F4$
 ; A4$, A4$, C4$, C4$, C4$
-; D4$, F4$, G4$, C4$, C4$,
+; D4$, F4$, G4$, C4$, C4$
 ; C4$, D4$, F4$, G4$, G4$
 ; G4$, A4 , F4$, D4$, F4$
 FREQUENCY_HI 
@@ -134,13 +134,14 @@ FREQUENCY_LO
 .BYTE $68, $A9, $92, $94, $94
 .BYTE $94, $F5, $92, $A9, $92
 
-; Page 360: adjust time 250->15 frames, 500->30 frames, 1000->60 frames
+; Page 360: adjust time 250->16 frames, 500->32 frames,
+; 1000->64 frames
 TONE_LENGTH 
-.BYTE 15, 30, 15, 30, 30
-.BYTE 60, 60, 15, 30, 15
-.BYTE 30, 30, 120, 15, 30
-.BYTE 15, 30, 30, 60, 60
-.BYTE 30, 15, 30, 30, 90
+.BYTE 16, 32, 16, 32, 32
+.BYTE 64, 64, 16, 32, 16
+.BYTE 32, 32, 128, 16, 32
+.BYTE 16, 32, 32, 64, 64
+.BYTE 32, 16, 32, 32, 96
 
 LAST                            ; End of the entire program
 
