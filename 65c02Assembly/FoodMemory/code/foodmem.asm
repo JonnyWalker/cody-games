@@ -4,19 +4,21 @@
 .include "codyconstants.asm"
 
 ; MARK: - ZP Variables
-RANDOM_VALUE      = $D0   ; TODO: remove
-TILE_COUNTER      = $D1   ; 0-15: used to iterate over tiles in test draw
-SCREEN_PTR        = $D2   ; 16-Bit variable
-COLOR_MEM_PTR16   = $D4   ; 16-Bit variable. used to write color data to memory
-CARD_INDEX = $D6   ; 0-5: used to check if one row of card tiles has been drawn
-CHAR_ROM_PTR16    = $DB   ; 16-Bit variable. used to read tile char data from ROM
-CHAR_MEM_PTR16    = $DD   ; 16-Bit variable. used to write tile char data to memory
-COLOR_ROM_PTR     = $DF   ; 16-Bit variable. used to read tile color data from ROM
-FRAME_CTR         = $E1
-CARD_PTR16        = $E3
+RANDOM_VALUE          = $D0   ; TODO: remove
+TILE_COUNTER          = $D1   ; 0-15: used to iterate over tiles in test draw
+SCREEN_PTR            = $D2   ; 16-Bit variable
+COLOR_MEM_PTR16       = $D4   ; 16-Bit variable. used to write color data to memory
+CARD_INDEX            = $D6   ; 0-5: used to check if one row of card tiles has been drawn
+CHAR_ROM_PTR16        = $DB   ; 16-Bit variable. used to read tile char data from ROM
+CHAR_MEM_PTR16        = $DD   ; 16-Bit variable. used to write tile char data to memory
+COLOR_ROM_PTR         = $DF   ; 16-Bit variable. used to read tile color data from ROM
+FRAME_CTR16           = $E1   ; 16-Bit variable. frame counter
+MOVEMENT_COOLDOWN_CTR = $E3   ; 8-Bit variable. used to slowdown movement
+CARD_PTR16            = $E4
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
+MOVEMENT_COOLDOWN = #10    ; how many frames between each movement action
 
 ; Program header for Cody Basic's loader (needs to be first)
 .WORD ADDR                      ; Starting address (just like KIM-1, Commodore, etc.)
@@ -59,22 +61,25 @@ _COPYSPRT
 
     LDA #$00            ; Sprite bank 0, white as common sprite color 
     STA VID_SPRC        ; VID_SPRC=$D006 (see codyconstants.asm)
-    LDA #12+8           ; sprite X
-    STA SPR0_X          ; SPR0_X=$D080 (see codyconstants.asm)
-    LDA #21+25          ; sprite Y
-    STA SPR0_Y          ; SPR0_Y=$D081 (see codyconstants.asm)
+    ; not setting sprite X (SPR0_X) here. handled in SHOW_TITLE_SCREEN
+    ; not setting sprite Y (SPR0_Y) here. handled in SHOW_TITLE_SCREEN
     LDA #$11            ; white=1 color 1, white=1 color 2 
     STA SPR0_COL        ; SPR0_COL=$D082 (see codyconstants.asm)
     LDA #$10            ; ($A400-$A000)/$40=$10 see Page 327 for explaination
     STA SPR0_PTR        ; SPR0_PTR=$D083 (see codyconstants.asm)  
 
-    STZ FRAME_CTR       ; FRAME_CTR=0
+    STZ FRAME_CTR16+0         ; FRAME_CTR16=0
+    STZ FRAME_CTR16+1
+    STZ MOVEMENT_COOLDOWN_CTR ; MOVEMENT_COOLDOWN_CTR=0
     STZ CARD_PTR16+0
     STZ CARD_PTR16+1
 
 
 
 SHOW_TITLE_SCREEN
+    STZ SPR0_X          ; Hide cursor during title screen by setting sprite pos to (0,0)
+    STZ SPR0_Y
+
     ; overwrites all other graphics
     JSR LOAD_CODSCII_TO_CHAR_MEM
 
@@ -156,45 +161,60 @@ _loop                           ;
     ; draw open cards (only a debug subroutine)
     JSR TEST_DRAW
 
+    ; Show cursor
+    LDA #12+8           ; sprite X
+    STA SPR0_X          ; SPR0_X=$D080 (see codyconstants.asm)
+    LDA #21+25          ; sprite Y
+    STA SPR0_Y          ; SPR0_Y=$D081 (see codyconstants.asm)
+
+    STZ CARD_PTR16+0    ; Keep CARD_PTR16 in sync with cursor pos
+    STZ CARD_PTR16+1
+
 _POLL_KEYBOARD
-    LDA FRAME_CTR       ; FRAME_CTR++
-    INC A
-    STA FRAME_CTR
-  
-    LDA FRAME_CTR       ; if FRAME_CTR % 4 != 0: skip movement
-    BIT #3
-    BNE _SKIP_MOVEMENT
-
-    JSR KEY_TO_A
-    CMP #"W"
-    BNE _CHECK_NEXT_KEY0
-    JMP _UP
-_CHECK_NEXT_KEY0
-    CMP #"A"
-    BNE _CHECK_NEXT_KEY1
-    JMP _LEFT
-_CHECK_NEXT_KEY1
-    CMP #"D"
-    BNE _CHECK_NEXT_KEY2
-    JMP _RIGHT
-_CHECK_NEXT_KEY2
-    CMP #"S"
-    BNE _CHECK_NEXT_KEY3
-    JMP _DOWN
-
-_CHECK_NEXT_KEY3
-_SKIP_MOVEMENT
-    JSR KEY_TO_A
-    CMP #"R"
-    BEQ _NEW_GAME
-
     JSR WAITBLANK       ; Wait for the next frame
 
+    INC FRAME_CTR16+0       ; FRAME_CTR16++
+    BNE _FRAME_CTR_INC_DONE ; If the lower half of the frame counter is zero we had an overflow and...
+    INC FRAME_CTR16+1       ; ...we also have to increment the upper half
+_FRAME_CTR_INC_DONE
 
+    JSR KEY_TO_A        ; A = pressed key
+
+    CMP #"R"
+    BNE _CHECK_NEXT_KEY0
+    JMP _NEW_GAME
+
+_CHECK_NEXT_KEY0
+    LDX MOVEMENT_COOLDOWN_CTR   ; if MOVEMENT_COOLDOWN_CTR == 0: check movement
+    BEQ _MOVEMENT
+    DEC MOVEMENT_COOLDOWN_CTR   ; else: MOVEMENT_COOLDOWN_CTR-- and check keys again next frame
     JMP _POLL_KEYBOARD
-  
+_MOVEMENT
+    CMP #"W"
+    BNE _CHECK_NEXT_MOVE_KEY0
+    JMP _UP
+_CHECK_NEXT_MOVE_KEY0
+    CMP #"A"
+    BNE _CHECK_NEXT_MOVE_KEY1
+    JMP _LEFT
+_CHECK_NEXT_MOVE_KEY1
+    CMP #"D"
+    BNE _CHECK_NEXT_MOVE_KEY2
+    JMP _RIGHT
+_CHECK_NEXT_MOVE_KEY2
+    CMP #"S"
+    BNE _CHECK_NEXT_MOVE_KEY3
+    JMP _DOWN
+_CHECK_NEXT_MOVE_KEY3
+    JMP _POLL_KEYBOARD
+
 _NEW_GAME
     JMP SHOW_TITLE_SCREEN
+
+_SET_MOVEMENT_COOLDOWN
+    LDA MOVEMENT_COOLDOWN       ; MOVEMENT_COOLDOWN_CTR = MOVEMENT_COOLDOWN
+    STA MOVEMENT_COOLDOWN_CTR
+    JMP _POLL_KEYBOARD
 _UP
     LDA SPR0_Y
     CMP #21+25 
@@ -213,7 +233,7 @@ _MOVE_UP
     SBC #0
     STA CARD_PTR16+1
 
-    JMP _POLL_KEYBOARD
+    JMP _SET_MOVEMENT_COOLDOWN
 _DOWN
     LDA SPR0_Y
     CMP #21+25+(32*3)
@@ -232,7 +252,7 @@ _MOVE_DOWN
     ADC #0
     STA CARD_PTR16+1
 
-    JMP _POLL_KEYBOARD
+    JMP _SET_MOVEMENT_COOLDOWN
 _LEFT
     LDA SPR0_X
     CMP #12+8
@@ -251,7 +271,7 @@ _MOVE_LEFT
     SBC #0
     STA CARD_PTR16+1
 
-    JMP _POLL_KEYBOARD
+    JMP _SET_MOVEMENT_COOLDOWN
 _RIGHT
     LDA SPR0_X
     CMP #12+8+(16*5)
@@ -270,7 +290,7 @@ _MOVE_RIGHT
     ADC #0
     STA CARD_PTR16+1
 
-    JMP _POLL_KEYBOARD
+    JMP _SET_MOVEMENT_COOLDOWN
 
 ; helper for subroutine TEST_DRAW
 DRAW_TILE
