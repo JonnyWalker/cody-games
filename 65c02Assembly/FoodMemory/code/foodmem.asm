@@ -164,8 +164,8 @@ _POLL_KEYBOARD
     JSR WAITBLANK       ; Wait for the next frame
 
     INC FRAME_CTR16+0       ; FRAME_CTR16++
-    BNE _FRAME_CTR_INC_DONE
-    INC FRAME_CTR16+1
+    BNE _FRAME_CTR_INC_DONE ; If the lower half of the frame counter is zero we had an overflow and...
+    INC FRAME_CTR16+1       ; ...we also have to increment the upper half
 _FRAME_CTR_INC_DONE
 
     JSR KEY_TO_A        ; A = pressed key
