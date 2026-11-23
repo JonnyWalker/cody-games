@@ -55,7 +55,6 @@ MAIN                    ; The program starts running from here
     STA VIA_DDRA        ; This is required for keyboard input
 
     JSR INIT_RANDOM
-    JSR INIT_SPRITES
 
 SHOW_TITLE_SCREEN
     STZ FRAME_CTR16+0         ; FRAME_CTR16=0
