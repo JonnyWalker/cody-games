@@ -20,12 +20,42 @@ GET_RANDOM_BYTE_TO_A
     RTS
 
 
+; MARK: SUB GET_RANDOM_BYTE_TO_A_WITH_MAX
+; get random value between 0..=MAX, where MAX is passed in X
+GET_RANDOM_BYTE_TO_A_WITH_MAX
+    ; check: if MAX = 0 the random number is always 0
+    CPX #0          ; IF MAX != 0...
+    BNE _next_check ; ...GOTO _next_check
+    LDA #0
+    RTS             ; ELSE return 0
+
+_next_check
+    ; check: if MAX = 255 we can directly return the random value without any calculations
+    CPX #255      ; IF MAX != 255...
+    BNE _slow_path  ; ...GOTO _slow_path
+    JMP GET_RANDOM_BYTE_TO_A ; ELSE return byte directly from GET_RANDOM_BYTE_TO_A (note: JSR/RTS not required because GET_RANDOM_BYTE_TO_A is already a subroutine)
+
+_slow_path
+    ; slow path:
+    ; we generate random numbers until we get one in the range 0..=MAX
+    STX _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    INC _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+_rand_loop
+    JSR GET_RANDOM_BYTE_TO_A
+    CMP _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    BCS _rand_loop ; branch if A >= _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    RTS
+
+_GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    .BYTE 0
+
+
 ; MARK: SUB COMPUTE_RANDOM_TILE_SET
 ; randomly select one of
 ; 4 available tile sets
 COMPUTE_RANDOM_TILE_SET
-    JSR GET_RANDOM_BYTE_TO_A
-    AND #3
+    LDX #3
+    JSR GET_RANDOM_BYTE_TO_A_WITH_MAX
     ASL
     TAX
     LDA MEMORY_SETS_PIXELS,X
@@ -41,32 +71,48 @@ COMPUTE_RANDOM_TILE_SET
 
 ; MARK: SUB COMPUTE_RANDOM_LEVEL
 COMPUTE_RANDOM_LEVEL               
-    ; idea: for all cards,
-    ; draw random index
-
+    ; fill the LEVEL array with 1,1,2,2,3,3,...,12,12
+    ; LEVEL,X = (X+2) / 2
     LDX #23
-_zero
-    STZ LEVEL,X
+_fill_loop
+    TXA
+    CLC
+    ADC #2
+    LSR
+    STA LEVEL,X
     DEX
-    BPL _zero
-                                ;
-    LDY #25                     ; 24 iterations.
-                                ; we start at 25 so that Y / 2
-                                ; produces card values 12...1,
-                                ; each exactly twice. if we
-                                ; started at 24 we would produce one 0.
-_loop                           ;
-    JSR GET_RANDOM_BYTE_TO_A    ; get random byte, and convert to
-    TAX                         ; index into level. mod 24 using
-    LDA MOD_24,X                ; a lookup table.
-    TAX                         ;
-    LDA LEVEL,X                 ; check if card at that index is 0.
-    BNE _loop                   ; if its not, then theres already a
-                                ; card assigned; try again.
-    TYA                         ;
-    LSR                         ; div 2 to map 25...1 to 12...1
-    STA LEVEL,X                 ; store card id at chosen index.
-    DEY                         ;
-    CPY #1                      ;
-    BNE _loop                   ;
+    BPL _fill_loop ; can use BPL (checks highest bit) because the start value is less than 128
+
+    ; shuffle the LEVEL array according to https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+    ; this works by "collecting" the shuffled elements on the right and in each iteration randomly selecting one element to add - similar to selection sort
+    ; start with the current position i at the end of the array (i=n-1)
+    ; then until the current position is 1:
+    ; randomly select one index 0 <= j <= i and swap it with the element at position i and decrement i
+    LDX #23
+_swap_loop
+    JSR GET_RANDOM_BYTE_TO_A_WITH_MAX
+    TAY
+
+    ; swap LEVEL,X and LEVEL,Y using the XOR swap algorithm: https://en.wikipedia.org/wiki/XOR_swap_algorithm
+    LDA LEVEL,X
+    CMP LEVEL,Y    ; skip the swap if the values are identical
+    BEQ _skip_swap ; the XOR swap algorithm only requires that the memory locations are different (X!=Y), but that is hard to check
+
+    ; A contains LEVEL,X
+    EOR LEVEL,Y
+    STA LEVEL,X
+    ; A and LEVEL,X contain LEVEL,X xor LEVEL,Y
+    EOR LEVEL,Y
+    STA LEVEL,Y
+    ; A and LEVEL,Y contain LEVEL,X
+    LDA LEVEL,X
+    ; A again contains LEVEL,X xor LEVEL,Y
+    EOR LEVEL,Y ; LEVEL,Y was already set to the previous LEVEL,X
+    STA LEVEL,X
+    ; A and LEVEL,X contain LEVEL,Y
+
+_skip_swap
+    DEX
+    BNE _swap_loop ; last iteration has X=1, we skip X=0
+
     RTS
