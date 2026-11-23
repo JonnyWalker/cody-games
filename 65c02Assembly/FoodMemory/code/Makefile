@@ -1,5 +1,5 @@
 OBJ := foodmem.bin
-INCLUDES := codyconstants.asm graphics.asm key_input.asm tile_set0.asm tile_set1.asm tile_set2.asm tile_set3.asm
+INCLUDES := $(wildcard *.asm)
 
 # checkout of https://github.com/fjmilens3/cody-computer
 CODY_BASIC ?= ../../../../cody-computer/Spin/codybasic.bin
