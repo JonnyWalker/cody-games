@@ -111,7 +111,11 @@ MAIN                            ; The program starts running from here
             LDA #$15
             STA BUFFER_FLAG
     _WAIT
-            JSR WAITBLANK
+            ; wait for blank before scroll and optional buffer switch
+    _WAITBLANK
+            ; Wait until the blanking is one (not drawing the screen)
+            LDA VID_BLNK
+            BEQ _WAITBLANK
             
             ; scroll horizontal by FRAME_CTR mod 4 pixels
             ; Bit 4-7 of VID_SCRL is used for horizontal scroll (so multiply by 16 by shifting)
@@ -140,11 +144,12 @@ MAIN                            ; The program starts running from here
             STA FRAME_CTR
     _SKIP_FRAME_CTR_RESET
 
-            JSR WAITBLANK
+    _WAITVIS
+            ; Wait until the blanking is zero (drawing the screen)
+            LDA VID_BLNK
+            BNE _WAITVIS
 
             JMP LOOP
-
-.include "graphics.asm"
 
 LAST                ; End of the entire program
 
