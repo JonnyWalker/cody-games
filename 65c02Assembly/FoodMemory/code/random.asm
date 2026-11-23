@@ -1,14 +1,22 @@
-; MARK: SUB GET_RANDOM_BYTE_TO_A
-; use noise for random value
-GET_RANDOM_BYTE_TO_A
+; MARK: SUB INIT_RANDOM
+; init voice 3 rng
+INIT_RANDOM
     ; switch voice 3 to noise mode with maximum frequency to generate random values in SID_V3OC ($D41B)
     LDA #$FF
     STA SID_V3FL
-    LDA #$FF
     STA SID_V3FH
     LDA #$80
     STA SID_V3CT
+    RTS
+
+
+; MARK: SUB GET_RANDOM_BYTE_TO_A
+; read noise from SID until we see a new value
+GET_RANDOM_BYTE_TO_A
     LDA SID_V3OC
+    CMP LAST_RANDOM_VALUE
+    BEQ GET_RANDOM_BYTE_TO_A
+    STA LAST_RANDOM_VALUE
     RTS
 
 
