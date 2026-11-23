@@ -138,6 +138,7 @@ _NEW_GAME
 
 ; MARK: Utilities
 
+.include "math.asm"
 .include "random.asm"
 
 ; MARK: Data Segment

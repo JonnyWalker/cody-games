@@ -21,7 +21,7 @@ GET_RANDOM_BYTE_TO_A
 
 
 ; MARK: SUB GET_RANDOM_BYTE_TO_A_WITH_MAX
-; get random value between 0..=MAX, where MAX is passed in X
+; get random value in 0..=MAX, where MAX is passed in X
 GET_RANDOM_BYTE_TO_A_WITH_MAX
     ; check: if MAX = 0 the random number is always 0
     CPX #0          ; IF MAX != 0...
@@ -37,14 +37,41 @@ _next_check
 
 _slow_path
     ; slow path:
-    ; we generate random numbers until we get one in the range 0..=MAX
-    STX _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
-    INC _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    ; we generate random numbers until we get one in the range 0..=LIMIT, where 0 <= LIMIT <= 255
+    ; LIMIT is chosen, so that there is no bias when calculating the remainder of the random number with MAX+1
+    ; this is the case when LIMIT+1 % MAX+1 = 0, or LIMIT = (n * (MAX+1)) - 1 for n>=1
+    ; the biggest LIMIT that fulfills that property is LIMIT = 255 - (256 % (MAX+1))
+    ; then we return the random number % MAX+1
+
+    ; we have to calculate 256 % (MAX+1)
+    ; first calculate A = 255 % (MAX+1), now we have A < MAX+1 <= 255
+    LDA #255
+    JSR MODULO_XP1
+    ; then increment...
+    INA
+    ; ...and set to zero if A = MAX+1 -> A >= MAX+1 -> A > MAX
+    STX _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT    ; cannot directly compare with MAX in X, so we use _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT as temp var
+    CMP _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    BEQ _mod_not_done                           ; if A > MAX set A = 0
+    BCS _mod_done
+_mod_not_done
+    LDA #0
+_mod_done
+    STA _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT    ; use _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT as temp var to save the result of 256 % (MAX+1)
+    
+    LDA #255
+    SEC
+    SBC _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    STA _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT    ; store final LIMIT in _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+
 _rand_loop
     JSR GET_RANDOM_BYTE_TO_A
     CMP _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
-    BCS _rand_loop ; branch if A >= _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
-    RTS
+    ; continue _rand_loop if A > _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    BEQ _done         ; break if A = _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
+    BCS _rand_loop    ; continue if A >= _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT, but the case A = _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT was already handled
+_done
+    JMP MODULO_XP1    ; JSR/RTS not required, use direct JMP
 
 _GET_RANDOM_BYTE_TO_A_WITH_MAX_LIMIT
     .BYTE 0
