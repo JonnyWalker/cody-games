@@ -8,7 +8,7 @@ MEMSPTR   = $20       ; The source pointer for memory-related utility routines (
 MEMDPTR   = $22       ; The destination pointer for memory-related utility routines (2 bytes)
 MEMSIZE   = $24       ; The size of memory to move for memory-related utility routines (2 bytes)
 
-LAST_RANDOM_VALUE.    = $D0   ; 8-Bit: last used random value
+LAST_RANDOM_VALUE     = $D0   ; 8-Bit: last used random value
 TILE_COUNTER          = $D1   ; 0-15: used to iterate over tiles in test draw
 SCREEN_PTR            = $D2   ; 16-Bit variable
 COLOR_MEM_PTR16       = $D4   ; 16-Bit variable. used to write color data to memory
