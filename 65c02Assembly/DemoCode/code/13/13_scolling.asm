@@ -3,12 +3,10 @@
 
 .include "codyconstants.asm"
 
-
 FRAME_CTR     = $D0   ; (variable S in Book)
 BUFFER_FLAG   = $D1   ; (variable B2 in Book)
-CHAR_MEM_PTR0 = $D2   ; (variable A(0)+I in Book)
-CHAR_MEM_PTR1 = $D4   ; (variable A(1)+I in Book)
-
+SCREEN_MEM_PTR0 = $D2 ; (variable A(0)+I in Book)
+SCREEN_MEM_PTR1 = $D4 ; (variable A(1)+I in Book)
 
 ; Program header for Cody Basic's loader (needs to be first)
 
@@ -20,27 +18,23 @@ CHAR_MEM_PTR1 = $D4   ; (variable A(1)+I in Book)
 .LOGICAL    ADDR                ; The actual program gets loaded at ADDR
 
 MAIN                            ; The program starts running from here
-            LDA #$E2            ; Set border color (Bits 0-3) to red=2 
+            LDA #$E6            ; Set border color (Bits 0-3) to blue=6 
                                 ; and set color memory to $D800 (A000+14*1024=D800), E=14
             STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)
-            LDA #$05            ; Set character memory to $A000 (A000+0*2048=A000)
-                                ; and set screen memory location $C400 (A000+9*1024=C400)
+            LDA #$05            ; Set character memory to $A000 (A000+5*2048=C800)
+                                ; and set screen memory location $C400 (A000+0*1024=A000)
             STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
 
-            LDA #$E2            ; Store shared colors  
-                                ; Color 3: light blue=14, Color 2: red=2
-            STA VID_SCRC        ; VID_SCRC=$D005 (see codyconstants.asm)
-
-            ; fill 2x character memory
-            STZ CHAR_MEM_PTR0+0
+            ; fill both 1KB of screen memory
+            STZ SCREEN_MEM_PTR0+0
             LDA #$A4
-            STA CHAR_MEM_PTR0+1
+            STA SCREEN_MEM_PTR0+1
 
-            STZ CHAR_MEM_PTR1+0
+            STZ SCREEN_MEM_PTR1+0
             LDA #$A0
-            STA CHAR_MEM_PTR1+1
+            STA SCREEN_MEM_PTR1+1
 
-            ; create pattern (with offset) in both character memorys (and buffer)
+            ; create pattern (with offset) in both screen memorys (and buffer)
             LDX #$04
     _OUTER_LOOP
             LDY #$00 
@@ -49,37 +43,37 @@ MAIN                            ; The program starts running from here
             AND #$01
             BEQ _EVEN
     _ODD    
-            LDA #$C2 
-            STA (CHAR_MEM_PTR0), Y
-            LDA #$14
-            STA (CHAR_MEM_PTR1), Y
+            LDA #$C2                 ; CODSCII: checkered square
+            STA (SCREEN_MEM_PTR0), Y
+            LDA #$20                 ; CODSCII: white space
+            STA (SCREEN_MEM_PTR1), Y
             JMP _NEXT
     _EVEN   
-            LDA #$14 
-            STA (CHAR_MEM_PTR0), Y
-            LDA #$C2
-            STA (CHAR_MEM_PTR1), Y
+            LDA #$20                 ; CODSCII: white space
+            STA (SCREEN_MEM_PTR0), Y
+            LDA #$C2                 ; CODSCII: checkered square
+            STA (SCREEN_MEM_PTR1), Y
     _NEXT
 
             INY
             CPY #250
             BNE _INNER_LOOP
 
-            CLC                 ; Increment pointer by 250
-            LDA CHAR_MEM_PTR0+0
+            CLC                      ; Increment pointer by 250 (tiles)
+            LDA SCREEN_MEM_PTR0+0
             ADC #250
-            STA CHAR_MEM_PTR0+0
-            LDA CHAR_MEM_PTR0+1
+            STA SCREEN_MEM_PTR0+0
+            LDA SCREEN_MEM_PTR0+1
             ADC #0
-            STA CHAR_MEM_PTR0+1
+            STA SCREEN_MEM_PTR0+1
 
-            CLC                 ; Increment pointer by 250
-            LDA CHAR_MEM_PTR1+0
+            CLC                      ; Increment pointer by 250 (tiles)
+            LDA SCREEN_MEM_PTR1+0
             ADC #250
-            STA CHAR_MEM_PTR1+0
-            LDA CHAR_MEM_PTR1+1
+            STA SCREEN_MEM_PTR1+0
+            LDA SCREEN_MEM_PTR1+1
             ADC #0
-            STA CHAR_MEM_PTR1+1
+            STA SCREEN_MEM_PTR1+1
 
             DEX
             BNE _OUTER_LOOP
@@ -87,17 +81,19 @@ MAIN                            ; The program starts running from here
             ; FRAME_CTR = 0
             STZ FRAME_CTR
 
-            ; start scroll by 0 pixels
+            ; set start scroll value to 0 pixels
             LDA #$00
             STA VID_SCRL
 
-            ; enable scrolling
+            ; enable scrolling mode
             LDA VID_CNTL
             ORA #$04
             STA VID_CNTL
 
     LOOP   
-            ; flip BUFFER_FLAG every four frames
+            ; flip BUFFER_FLAG every four frames 
+            ; by checking if BIT-2 is set
+            ; FRAME_CTR runs from 0 to 7
             LDA FRAME_CTR
             LSR
             LSR
@@ -111,14 +107,15 @@ MAIN                            ; The program starts running from here
             LDA #$15
             STA BUFFER_FLAG
     _WAIT
-            ; wait for blank before scroll and optional buffer switch
+            ; wait for blank before scroll (and optional buffer switch)
     _WAITBLANK
             ; Wait until the blanking is one (not drawing the screen)
             LDA VID_BLNK
             BEQ _WAITBLANK
             
             ; scroll horizontal by FRAME_CTR mod 4 pixels
-            ; Bit 4-7 of VID_SCRL is used for horizontal scroll (so multiply by 16 by shifting)
+            ; Bit 4-7 of VID_SCRL is used for 
+            ; horizontal scroll (so multiply by 16 by shifting)
             LDA FRAME_CTR
             ORA #$03
             ASL 
@@ -151,6 +148,6 @@ MAIN                            ; The program starts running from here
 
             JMP LOOP
 
-LAST                ; End of the entire program
+LAST        ; End of the entire program
 
 .ENDLOGICAL
