@@ -148,9 +148,6 @@ _NEW_GAME
 .include "tile_set3.asm"
 .include "sprites.asm"
 
-Text0 .TEXT "Food Memory"
-Text1 .TEXT "PRESS SPACE TO CONTINUE."
-
 ; TODO: fix naming (missing underscore)
 MEMORY_SETS_PIXELS
     .WORD TILE_SET0

@@ -22,7 +22,7 @@ MAIN                            ; The program starts running from here
             LDA #$E6            ; Set border color (Bits 0-3) to blue=6 
                                 ; and set color memory to $D800 (A000+14*1024=D800), E=14
             STA VID_COLR        ; VID_COLR=$D002 (see codyconstants.asm)
-            LDA #$05            ; Set character memory to $A000 (A000+5*2048=C800)
+            LDA #$05            ; Set character memory to $C800 (A000+5*2048=C800)
                                 ; and set screen memory location $A000 (A000+0*1024=A000)
             STA VID_BPTR        ; VID_BPTR=$D003 (see codyconstants.asm)
 
