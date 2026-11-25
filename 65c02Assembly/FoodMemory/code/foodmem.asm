@@ -145,9 +145,6 @@ _NEW_GAME
 .include "tile_set3.asm"
 .include "sprites.asm"
 
-Text0 .TEXT "Food Memory"
-Text1 .TEXT "PRESS SPACE TO CONTINUE."
-
 .ALIGN 256
 MOD_24
     .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
