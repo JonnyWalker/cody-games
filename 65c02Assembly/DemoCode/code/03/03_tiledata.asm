@@ -1,3 +1,4 @@
+; 64tass --mw65c02 --nostart -o 03_tiledata.bin 03_tiledata.asm
 ; Changes 20 tiles in the first row
 
 .include "codyconstants.asm"
