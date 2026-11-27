@@ -8,3 +8,9 @@ Desktop.ini
 
 # IDE Files
 .vscode/
+
+# CodyNET
+logs
+editor._pre.asm
+editor._pre.lst
+editor.asm
