@@ -8,7 +8,7 @@ MEMSPTR   = $20       ; The source pointer for memory-related utility routines (
 MEMDPTR   = $22       ; The destination pointer for memory-related utility routines (2 bytes)
 MEMSIZE   = $24       ; The size of memory to move for memory-related utility routines (2 bytes)
 
-RANDOM_VALUE          = $D0   ; TODO: remove
+LAST_RANDOM_VALUE     = $D0   ; 8-Bit: last used random value
 TILE_COUNTER          = $D1   ; 0-15: used to iterate over tiles in test draw
 SCREEN_PTR            = $D2   ; 16-Bit variable
 COLOR_MEM_PTR16       = $D4   ; 16-Bit variable. used to write color data to memory
@@ -53,6 +53,8 @@ MAIN                    ; The program starts running from here
 
     LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)
     STA VIA_DDRA        ; This is required for keyboard input
+
+    JSR INIT_RANDOM
 
 SHOW_TITLE_SCREEN
     STZ FRAME_CTR16+0         ; FRAME_CTR16=0
@@ -135,6 +137,7 @@ _NEW_GAME
 
 ; MARK: Utilities
 
+.include "math.asm"
 .include "random.asm"
 
 ; MARK: Data Segment
@@ -144,20 +147,6 @@ _NEW_GAME
 .include "tile_set2.asm"
 .include "tile_set3.asm"
 .include "sprites.asm"
-
-.ALIGN 256
-MOD_24
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
-    .BYTE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
 
 ; TODO: fix naming (missing underscore)
 MEMORY_SETS_PIXELS
