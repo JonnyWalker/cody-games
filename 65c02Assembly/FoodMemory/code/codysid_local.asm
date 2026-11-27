@@ -24,7 +24,9 @@
 ; the screen.
 ;
 ; See https://gist.github.com/cbmeeks/2b107f0a8d36fc461ebb056e94b2f4d6 for a
-; description of the various SID file layouts. 
+; description of the various SID file layouts.
+; 
+; name of SID-file must be specified at the end of this program.
 
 SIDBASE   = $D400               ; SID register base address
 
@@ -101,4 +103,4 @@ _DONE       PLY                   ; Restore registers
 
             .cerror * > SIDLOAD, "SID-address in player code"
             .fill SIDLOAD - *, 0        ; fill with zero
-            .binary "greensleves.sid", $7E     ; skip header
+            .binary "greensleeves.sid", $7E     ; skip header
