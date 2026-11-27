@@ -1,12 +1,16 @@
 ; MARK: SUB DRAW_TILE
 ; helper for subroutine TEST_DRAW
+;
+; clobbers Y, A
+; CARD_VALUE: which card to draw 
+; TILE_COUNTER: which tile of the card to draw
+; SCREEN_PTR: destination
+; COLOR_MEM_PTR16: destination
+; COLOR_ROM_PTR: source
+; incs SCREEN_PTR and COLOR_ROM_PTR by one
 DRAW_TILE
-PHY
-PHX
-TXA
-TAY
-    ; pixel = A = LEVEL[CARD_INDEX] * 16 + TILE_COUNTER (each card is 4x4=16 tiles)
-    LDA LEVEL, Y
+    ; pixel = A = CARD_VALUE 16 + TILE_COUNTER (each card is 4x4=16 tiles)
+    LDA CARD_VALUE
     ASL
     ASL
     ASL
@@ -19,20 +23,17 @@ TAY
     STA (SCREEN_PTR)
 
     ; compute color of current tile
-    ; color = COLOR_DATA[LEVEL[CARD_INDEX] * 16 + TILE_COUNTER]  (each card is 4x4=16 tiles)
-    LDA LEVEL, Y
+    ; color = COLOR_DATA[CARD_VALUE] * 16 + TILE_COUNTER]  (each card is 4x4=16 tiles)
+    LDA CARD_VALUE
     ASL
     ASL
     ASL
     ASL
     CLC
     ADC TILE_COUNTER
-    PHY
     TAY
-
     ; color = COLOR_ROM_PTR[Y]
     LDA (COLOR_ROM_PTR), Y
-    PLY
 
     ; COLOR_MEM_PTR16[A] = color
     ; set color for this tile
@@ -56,14 +57,6 @@ TAY
     ADC #0
     STA COLOR_MEM_PTR16+1
 
-    ; TILE_COUNTER++
-    CLC
-    LDA TILE_COUNTER
-    ADC #$01
-    STA TILE_COUNTER
-
-    PLX
-    PLY
     RTS
 
 
@@ -98,21 +91,39 @@ TEST_DRAW
   ; This loop draws one row of cards 6*4x4 tiles each
   _FOUR_ROWS
     LDA #$00
-    STA CARD_INDEX
+    STA CARD_COLUMN_INDEX
   ; This loop draws one row of 4*6 tiles
   _ROW
     ; Draw four tiles (of one card)
     ; notice the side-effects on the variables in the subroutine
+    PHY
+    LDA LEVEL, X
+    STA CARD_VALUE
     JSR DRAW_TILE
-    JSR DRAW_TILE
-    JSR DRAW_TILE
-    JSR DRAW_TILE
+    INC TILE_COUNTER
 
-    ; CARD_INDEX = CARD_INDEX + 1
-    LDA CARD_INDEX
+    LDA LEVEL, X
+    STA CARD_VALUE
+    JSR DRAW_TILE
+    INC TILE_COUNTER
+
+    LDA LEVEL, X
+    STA CARD_VALUE
+    JSR DRAW_TILE
+    INC TILE_COUNTER
+
+    LDA LEVEL, X
+    STA CARD_VALUE
+    JSR DRAW_TILE
+    INC TILE_COUNTER
+
+    PLY
+
+    ; CARD_COLUMN_INDEX = CARD_COLUMN_INDEX + 1
+    LDA CARD_COLUMN_INDEX
     CLC
     ADC #$01
-    STA CARD_INDEX
+    STA CARD_COLUMN_INDEX
 
     ; TILE_COUNTER = TILE_COUNTER - 4  (next tile in row starts)
     LDA TILE_COUNTER
@@ -124,7 +135,7 @@ TEST_DRAW
     INX
 
     ; check if tiles of one row are drawn (6 cards each row)
-    LDA CARD_INDEX
+    LDA CARD_COLUMN_INDEX
     CMP #6
     BEQ _END_ROW
     JMP _ROW
@@ -191,8 +202,58 @@ TEST_DRAW
 
     RTS
 
-; MARK: SUB DRAW_CARD_AT_XY
-; TODO
-DRAW_CARD_AT_XY
-    RTS
+; MARK: SUB DRAW_CARD_AT_CARD_PTR16
+; Arguments: ZP Variable
+; CARD_PTR16: top left tile of 4x4 tile card in screen memory
+; CARD_VALUE
+DRAW_CARD_AT_CARD_PTR16
 
+    LDA CARD_PTR16+0
+    STA SCREEN_PTR+0
+    LDA CARD_PTR16+0
+    STA COLOR_MEM_PTR16+0
+
+    LDA CARD_PTR16+1
+    CLC
+    ADC #$C4 ; set to screen memory
+    STA SCREEN_PTR+1
+    LDA CARD_PTR16+1
+    CLC
+    ADC #$D8 ; set to color memory
+    STA COLOR_MEM_PTR16+1
+
+    STZ TILE_COUNTER
+    LDY #$00
+_LOOP
+    LDX #$00
+_ROW_LOOP
+    PHY
+    JSR DRAW_TILE
+    PLY
+
+    INC TILE_COUNTER
+    INX
+    CPX #$04
+    BNE _ROW_LOOP
+
+    CLC
+    LDA SCREEN_PTR+0
+    ADC #$24
+    STA SCREEN_PTR+0
+    LDA SCREEN_PTR+1
+    ADC #$00
+    STA SCREEN_PTR+1
+
+    CLC
+    LDA COLOR_MEM_PTR16+0
+    ADC #$24
+    STA COLOR_MEM_PTR16+0
+    LDA COLOR_MEM_PTR16+1
+    ADC #$00
+    STA COLOR_MEM_PTR16+1
+
+    INY
+    CPY #$04
+    BNE _LOOP
+
+    RTS

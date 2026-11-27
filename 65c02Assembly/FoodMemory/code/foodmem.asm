@@ -13,7 +13,7 @@ USED_BY_SID0          = $D0
 USED_BY_SID1          = $D1 
 SCREEN_PTR            = $D2   ; 16-Bit variable
 COLOR_MEM_PTR16       = $D4   ; 16-Bit variable. used to write color data to memory
-CARD_INDEX            = $D6   ; 0-5: used to check if one row of card tiles has been drawn
+CARD_COLUMN_INDEX            = $D6   ; 0-5: used to check if one row of card tiles has been drawn
 CHAR_ROM_PTR16        = $DB   ; 16-Bit variable. used to read tile char data from ROM
 CHAR_MEM_PTR16        = $DD   ; 16-Bit variable. used to write tile char data to memory
 COLOR_ROM_PTR         = $DF   ; 16-Bit variable. used to read tile color data from ROM
@@ -22,6 +22,7 @@ MOVEMENT_COOLDOWN_CTR = $E3   ; 8-Bit variable. used to slowdown movement
 CARD_PTR16            = $E4
 LAST_RANDOM_VALUE     = $E6   ; 8-Bit: last used random value
 TILE_COUNTER          = $E7   ; 0-15: used to iterate over tiles in test draw
+CARD_VALUE            = $E8   ; 0-12 card types, 0 = back of card
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
@@ -121,10 +122,17 @@ _FRAME_CTR_INC_DONE
     JSR KEY_TO_A        ; A = pressed key   
     CMP #"R"
     BEQ _NEW_GAME
+    CMP #" "
+    BEQ _FLIP_CARD
     JMP _GAME_LOOP
 _NEW_GAME
     JMP SHOW_TITLE_SCREEN 
-    
+_FLIP_CARD
+    LDA #$00
+    STA CARD_VALUE
+    JSR DRAW_CARD_AT_CARD_PTR16
+    JMP _GAME_LOOP
+
 
 ; MARK: Init
 
