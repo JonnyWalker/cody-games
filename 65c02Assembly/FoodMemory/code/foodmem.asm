@@ -66,7 +66,7 @@ SHOW_TITLE_SCREEN
     STZ SPR0_X          ; Hide cursor during title screen by setting sprite pos to (0,0)
     STZ SPR0_Y
     JSR SHOW_TITLE
-
+    JSR CODYSID_LOCAL_MAIN
 
 _WAIT_FOR_SPACE
     ; exit loop on space key
@@ -129,6 +129,10 @@ _NEW_GAME
 .include "graphics.asm"
 .include "draw_cards.asm"
 .include "title_screen.asm"
+
+; MARK: Music
+
+.include "codysid_local.asm"
 
 ; MARK: I/0
 
