@@ -8,8 +8,9 @@ MEMSPTR   = $20       ; The source pointer for memory-related utility routines (
 MEMDPTR   = $22       ; The destination pointer for memory-related utility routines (2 bytes)
 MEMSIZE   = $24       ; The size of memory to move for memory-related utility routines (2 bytes)
 
-LAST_RANDOM_VALUE     = $D0   ; 8-Bit: last used random value
-TILE_COUNTER          = $D1   ; 0-15: used to iterate over tiles in test draw
+
+USED_BY_SID0          = $D0 
+USED_BY_SID1          = $D1 
 SCREEN_PTR            = $D2   ; 16-Bit variable
 COLOR_MEM_PTR16       = $D4   ; 16-Bit variable. used to write color data to memory
 CARD_INDEX            = $D6   ; 0-5: used to check if one row of card tiles has been drawn
@@ -19,6 +20,8 @@ COLOR_ROM_PTR         = $DF   ; 16-Bit variable. used to read tile color data fr
 FRAME_CTR16           = $E1   ; 16-Bit variable. frame counter
 MOVEMENT_COOLDOWN_CTR = $E3   ; 8-Bit variable. used to slowdown movement
 CARD_PTR16            = $E4
+LAST_RANDOM_VALUE     = $E6   ; 8-Bit: last used random value
+TILE_COUNTER          = $E7   ; 0-15: used to iterate over tiles in test draw
 
 ; CONSTANTS
 CARDS_EACH_ROW = #$06
@@ -54,8 +57,6 @@ MAIN                    ; The program starts running from here
     LDA #$07            ; Set VIA data direction register A to 00000111 (pins 0-2 outputs, pins 3-7 inputs)
     STA VIA_DDRA        ; This is required for keyboard input
 
-    JSR INIT_RANDOM
-
 SHOW_TITLE_SCREEN
     STZ FRAME_CTR16+0         ; FRAME_CTR16=0
     STZ FRAME_CTR16+1
@@ -87,10 +88,15 @@ _WAIT_FOR_SPACE
     LDA #$10
     ; replace all characters with empty character
     JSR CLEAR_SCREEN
+
     ; compute random card positions
+    SEI
+    JSR INIT_RANDOM
     JSR COMPUTE_RANDOM_LEVEL
     ; compute random card images
     JSR COMPUTE_RANDOM_TILE_SET
+    CLI
+
     ; load tile set from game ROM to memory
     JSR COPY_ALL_CHAR_TO_MEMORY
     ; draw open cards (only a debug subroutine)
