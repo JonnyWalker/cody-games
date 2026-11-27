@@ -1,5 +1,5 @@
 ; Recieves bytes via UART and print them on the screen
-; 64tass --mw65c02 --nostart -o UART_Recieve.bin UART_Recieve.asm
+; 64tass --mw65c02 --nostart -o 14_UART_Receive.bin 14_UART_Receive.asm
 ; plink -batch -serial \\.\COMX -sercfg "19200,8,1,n,N" < input.bin
 ; Author: Lukas Lang
 
@@ -9,8 +9,8 @@ UART_BASE = $D480               ; UART Memory start, ($D480 = UART 1(PROP PLUG))
                                 ; $D4A0 = UART 2 (expansion port))
 UART_COMMAND = UART_BASE + 1    ; Command Register, 0 = off, 1 = on
 UART_STATUS = UART_BASE + 2     ; Status Register
-UART_HEAD = UART_BASE + 4       ; Recieve Ringbuffer Head
-UART_TAIL = UART_BASE + 5       ; Recieve Ringbuffer Tail
+UART_HEAD = UART_BASE + 4       ; Receive Ringbuffer Head
+UART_TAIL = UART_BASE + 5       ; Receive Ringbuffer Tail
 BUFFER_POINTER = UART_BASE + 8  ; Start of recieve Ringbuffer
 BAUD_RATE = $F                  ; F = 19200
 
@@ -22,7 +22,7 @@ ERROR = $D0
 HEAD = $D3                      
 TAIL = $D5                      
 
-LAST_BYTE = $D7                      ; last byte recieved
+LAST_BYTE = $D7                 ; last byte recieved
 BYTE_COUNTER = $D9              ; How many bytes recieved
 
 ; Program header for Cody Basic's loader (needs to be first)
@@ -51,7 +51,7 @@ MAIN                            ; The program starts running from here
             STZ LAST_BYTE
             STZ BYTE_COUNTER
             
-            LDA CHARDATA        ; only character is empty character (TODO)
+            LDA $00             ; only character is empty character 
             STA $C800
             LDA #$00
             JSR CLEAR_SCREEN    ; replace all characters with empty character
@@ -61,7 +61,12 @@ MAIN                            ; The program starts running from here
             LDA #$00            ; turn off uart
             STA UART_COMMAND
 
-            JSR WAIT_UNTIL_DOWN
+; poll status register and  
+; loop until UART is off
+_WAIT
+            LDA UART_STATUS   
+            AND #$40
+            BNE _WAIT
 
             LDA #BAUD_RATE      ; set baud rate, set in first UART reg
             STA UART_BASE     
@@ -72,7 +77,13 @@ MAIN                            ; The program starts running from here
             LDA #$01            ; turn on uart
             STA UART_COMMAND
 
-            JSR WAIT_UNTIL_READY
+; poll status register and  
+; loop until UART is on (ready to receive)
+WAIT_UNTIL_READY
+_WAIT
+            LDA UART_STATUS   
+            AND #$40
+            BEQ _WAIT
 
 _RECIEVE_LOOP
             LDA UART_STATUS     ; read status and check for errors
@@ -125,36 +136,7 @@ ERROR_CHECK
 _DONE       JMP _DONE           ; Loops forever
 
 
-; poll status register and  
-; loop until UART status reg is updated
-WAIT_UNTIL_DOWN
-_WAIT
-            LDA UART_STATUS   
-            AND #$40
-            BNE _WAIT
-            RTS
-
-; poll status register and  
-; loop until UART status reg is updated
-WAIT_UNTIL_READY
-_WAIT
-            LDA UART_STATUS   
-            AND #$40
-            BEQ _WAIT
-            RTS
-
 .include "graphics.asm"
-
-CHARDATA
-
-  .BYTE %00000000   ; "empty tile"
-  .BYTE %00000000
-  .BYTE %00000000
-  .BYTE %00000000
-  .BYTE %00000000
-  .BYTE %00000000
-  .BYTE %00000000
-  .BYTE %00000000
 
 LAST                            ; End of the entire program
 
