@@ -4,7 +4,7 @@ A Cody Assembly Game for the [Cody Computer](https://www.codycomputer.org/).
 
 # How to Play
 
-TODO
+WASD + Space (flip card)
 
 # Screenshot
 ![food.png](food.png)
